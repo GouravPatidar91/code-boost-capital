@@ -9,7 +9,7 @@ import { ChatInbox } from '@/components/ChatInbox';
 import { StartupCard } from '@/components/StartupCard';
 import { useStartupListings } from '@/hooks/useStartupListings';
 import { supabase } from '@/integrations/supabase/client';
-import { Github } from 'lucide-react';
+import { Github, Plus, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
@@ -101,7 +101,7 @@ const Dashboard = () => {
                 <p className="text-gray-600 mt-1">Manage your startups and chat with potential funders</p>
               </div>
               <Button className="bg-gradient-to-r from-purple-600 to-blue-600">
-                <Github className="w-4 h-4 mr-2" />
+                <Plus className="w-4 h-4 mr-2" />
                 List New Startup
               </Button>
             </div>
@@ -123,12 +123,30 @@ const Dashboard = () => {
             ) : !startups || startups.length === 0 ? (
               <Card className="text-center py-12">
                 <CardContent>
-                  <div className="text-lg text-gray-600 mb-4">No startups listed yet</div>
-                  <p className="text-gray-500 mb-6">Start by listing your first startup to receive funding</p>
-                  <Button className="bg-gradient-to-r from-purple-600 to-blue-600">
-                    <Github className="w-4 h-4 mr-2" />
-                    List Your First Startup
-                  </Button>
+                  <AlertCircle className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                  <div className="text-lg text-gray-600 mb-4">No startups found</div>
+                  <p className="text-gray-500 mb-4">
+                    We couldn't find any startups associated with your account ({user.email}).
+                  </p>
+                  <p className="text-sm text-gray-400 mb-6">
+                    Make sure you're using the same email address that you used when creating your startup listing.
+                  </p>
+                  <div className="space-y-4">
+                    <Button 
+                      className="bg-gradient-to-r from-purple-600 to-blue-600"
+                      onClick={() => fetchUserStartups(user.email)}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Refresh / Try Again
+                    </Button>
+                    <div className="text-xs text-gray-400">
+                      or
+                    </div>
+                    <Button variant="outline" className="border-purple-200">
+                      <Github className="w-4 h-4 mr-2" />
+                      List Your First Startup
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ) : (
