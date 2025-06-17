@@ -123,9 +123,11 @@ const Index = () => {
                 List Your Startup
               </Button>
             ) : (
-              <Button size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 text-lg px-8 py-3">
-                <TrendingUp className="w-5 h-5 mr-2" />
-                Explore Startups
+              <Button size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 text-lg px-8 py-3" asChild>
+                <Link to="/explore">
+                  <TrendingUp className="w-5 h-5 mr-2" />
+                  Explore Startups
+                </Link>
               </Button>
             )}
           </div>
@@ -231,13 +233,17 @@ const Index = () => {
                     )}
 
                     <div className="flex space-x-2 pt-2">
-                      <Button className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600" size="sm">
-                        <DollarSign className="w-4 h-4 mr-1" />
-                        Fund
+                      <Button className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600" size="sm" asChild>
+                        <Link to={`/fund/${startup.id}`}>
+                          <DollarSign className="w-4 h-4 mr-1" />
+                          Fund
+                        </Link>
                       </Button>
-                      <Button variant="outline" size="sm">
-                        <MessageSquare className="w-4 h-4 mr-1" />
-                        Chat
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to={`/chat/${startup.id}`}>
+                          <MessageSquare className="w-4 h-4 mr-1" />
+                          Chat
+                        </Link>
                       </Button>
                       <Button variant="outline" size="sm">
                         <Star className="w-4 h-4" />
