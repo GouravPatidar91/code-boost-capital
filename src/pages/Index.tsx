@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Github, Wallet, Shield, TrendingUp, Users, MessageSquare, Star, GitCommit, DollarSign, Settings } from 'lucide-react';
+import { Github, Wallet, Shield, TrendingUp, Users, MessageSquare, Star, GitCommit, DollarSign, Settings, LogIn } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { StartupListingForm } from '@/components/StartupListingForm';
 import { useStartupListings } from '@/hooks/useStartupListings';
@@ -61,6 +61,13 @@ const Index = () => {
                   Founder
                 </Button>
               </div>
+              
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/auth">
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Sign In
+                </Link>
+              </Button>
               
               <Button variant="outline" size="sm" asChild>
                 <Link to="/dashboard">
@@ -143,7 +150,7 @@ const Index = () => {
             <div className="text-center py-12">
               <div className="text-lg text-gray-600">Loading startups...</div>
             </div>
-          ) : startups.length === 0 ? (
+          ) : !startups || startups.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-lg text-gray-600">No verified startups found.</div>
               {userRole === 'founder' && (
@@ -201,7 +208,7 @@ const Index = () => {
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Funding Goal</span>
                         <span className="font-medium">
-                          ${startup.funding_goal.toLocaleString()}
+                          ${startup.funding_goal?.toLocaleString() || 'N/A'}
                         </span>
                       </div>
                       <Progress value={0} className="h-2" />
@@ -257,7 +264,7 @@ const Index = () => {
               <div className="text-purple-100">Total Funded</div>
             </div>
             <div>
-              <div className="text-4xl font-bold mb-2">{startups.length}</div>
+              <div className="text-4xl font-bold mb-2">{startups?.length || 0}</div>
               <div className="text-purple-100">Active Projects</div>
             </div>
             <div>
