@@ -75,6 +75,16 @@ export const useStartupListings = () => {
   };
 
   const fetchUserStartups = async (userEmail: string) => {
+    if (!userEmail) {
+      console.error('No user email provided');
+      toast({
+        title: "Error",
+        description: "User email is required to fetch startups.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       console.log('Fetching startups for user email:', userEmail);
@@ -99,17 +109,25 @@ export const useStartupListings = () => {
         .eq('contact_email', userEmail)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
       
       console.log('Fetched user startups:', data);
       setStartups(data || []);
+      
+      if (!data || data.length === 0) {
+        console.log('No startups found for user:', userEmail);
+      }
     } catch (error) {
       console.error('Error fetching user startups:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch your startup listings.",
+        description: "Failed to fetch your startup listings. Please try again.",
         variant: "destructive"
       });
+      setStartups([]); // Set empty array on error
     } finally {
       setLoading(false);
     }

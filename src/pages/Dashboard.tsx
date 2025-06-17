@@ -25,36 +25,53 @@ const Dashboard = () => {
   // Check authentication and fetch user startups
   useEffect(() => {
     const getUser = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error('Error getting session:', error);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          toast({
+            title: "Authentication Error",
+            description: "Failed to get user session.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        if (session?.user) {
+          console.log('User authenticated:', session.user.email);
+          setUser(session.user);
+          
+          // Fetch user startups using the authenticated user's email
+          if (session.user.email) {
+            await fetchUserStartups(session.user.email);
+          }
+        } else {
+          console.log('No authenticated user');
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Error in getUser:', error);
         toast({
-          title: "Authentication Error",
-          description: "Failed to get user session.",
+          title: "Error",
+          description: "Failed to fetch user data.",
           variant: "destructive"
         });
-        return;
-      }
-
-      if (session?.user) {
-        console.log('User authenticated:', session.user.email);
-        setUser(session.user);
-        fetchUserStartups(session.user.email);
-      } else {
-        console.log('No authenticated user');
-        setUser(null);
       }
     };
 
     getUser();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         console.log('Auth state changed - user logged in:', session.user.email);
         setUser(session.user);
-        fetchUserStartups(session.user.email);
+        
+        // Fetch user startups when auth state changes
+        if (session.user.email) {
+          await fetchUserStartups(session.user.email);
+        }
       } else {
         console.log('Auth state changed - user logged out');
         setUser(null);
