@@ -27,7 +27,14 @@ export const useRealTimeChat = (startupId: string) => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setMessages(data || []);
+      
+      // Type assertion to ensure proper typing
+      const typedMessages = (data || []).map(msg => ({
+        ...msg,
+        sender_type: msg.sender_type as 'funder' | 'founder'
+      }));
+      
+      setMessages(typedMessages);
     } catch (error) {
       console.error('Error fetching messages:', error);
       toast({
@@ -90,7 +97,11 @@ export const useRealTimeChat = (startupId: string) => {
         },
         (payload) => {
           console.log('New message received:', payload);
-          setMessages(prev => [...prev, payload.new as ChatMessage]);
+          const newMessage = {
+            ...payload.new,
+            sender_type: payload.new.sender_type as 'funder' | 'founder'
+          } as ChatMessage;
+          setMessages(prev => [...prev, newMessage]);
         }
       )
       .subscribe();

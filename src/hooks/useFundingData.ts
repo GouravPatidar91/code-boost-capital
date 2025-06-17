@@ -21,17 +21,20 @@ export const useFundingData = (startupId?: string) => {
   const fetchFundingData = async (id?: string) => {
     setLoading(true);
     try {
-      let query = supabase
-        .from('startup_funding_summary')
-        .select('*');
-
       if (id) {
-        query = query.eq('startup_id', id).single();
-        const { data, error } = await query;
+        const { data, error } = await supabase
+          .from('startup_funding_summary')
+          .select('*')
+          .eq('startup_id', id)
+          .maybeSingle();
+        
         if (error && error.code !== 'PGRST116') throw error;
         setFundingData(data);
       } else {
-        const { data, error } = await query;
+        const { data, error } = await supabase
+          .from('startup_funding_summary')
+          .select('*');
+        
         if (error) throw error;
         setAllFundingData(data || []);
       }
@@ -56,11 +59,16 @@ export const useFundingData = (startupId?: string) => {
     transactionHash?: string
   ) => {
     try {
+      // For demo purposes, we'll use a placeholder recipient address
+      // In a real app, this would be the startup's wallet address from the developers table
+      const recipientAddress = '0x742d35Cc6634C0532925a3b8D4e7C02FFDF5fBE';
+
       const { error } = await supabase
         .from('funding_transactions')
         .insert({
           startup_listing_id: startupListingId,
           funder_wallet_address: funderWalletAddress,
+          recipient_wallet_address: recipientAddress,
           amount_usd: amountUsd,
           amount_crypto: amountCrypto,
           currency: currency,
