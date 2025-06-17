@@ -197,6 +197,7 @@ export const useGitHubAuth = () => {
     connectGitHub,
     disconnectGitHub,
     syncRepository,
-    fetchUserRepos
+    fetchUserRepos,
+    verifyAndConnectToken
   };
 };

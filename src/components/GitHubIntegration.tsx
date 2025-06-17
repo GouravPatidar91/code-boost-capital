@@ -2,10 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useGitHubAuth } from '@/hooks/useGitHubAuth';
-import { Github, GitBranch, Star, ExternalLink, AlertCircle, Loader2 } from 'lucide-react';
+import { Github, GitBranch, Star, ExternalLink, AlertCircle, Loader2, Key } from 'lucide-react';
 
 interface Repository {
   id: number;
@@ -34,6 +36,8 @@ export const GitHubIntegration = () => {
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState<string | null>(null);
+  const [tokenInput, setTokenInput] = useState('');
+  const [showTokenInput, setShowTokenInput] = useState(false);
 
   useEffect(() => {
     if (isConnected) {
@@ -62,6 +66,16 @@ export const GitHubIntegration = () => {
     }
   };
 
+  const handleTokenSubmit = async () => {
+    if (!tokenInput.trim()) return;
+    
+    // Use the existing verifyAndConnectToken function from the hook
+    const { verifyAndConnectToken } = useGitHubAuth();
+    await verifyAndConnectToken(tokenInput.trim());
+    setTokenInput('');
+    setShowTokenInput(false);
+  };
+
   if (!isConnected) {
     return (
       <div className="space-y-4">
@@ -75,36 +89,92 @@ export const GitHubIntegration = () => {
               Connect your GitHub account to sync repositories and track contributions
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button 
-              onClick={connectGitHub} 
-              className="w-full" 
-              disabled={isConnecting}
-            >
-              {isConnecting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Connecting...
-                </>
-              ) : (
-                <>
-                  <Github className="w-4 h-4 mr-2" />
-                  Authorize FundChain
-                </>
-              )}
-            </Button>
+          <CardContent className="space-y-4">
+            {!showTokenInput ? (
+              <div className="space-y-3">
+                <Button 
+                  onClick={() => setShowTokenInput(true)} 
+                  className="w-full" 
+                  disabled={isConnecting}
+                >
+                  <Key className="w-4 h-4 mr-2" />
+                  Enter Personal Access Token
+                </Button>
+                <div className="text-center">
+                  <span className="text-sm text-gray-500">or</span>
+                </div>
+                <Button 
+                  onClick={connectGitHub} 
+                  className="w-full" 
+                  variant="outline"
+                  disabled={isConnecting}
+                >
+                  {isConnecting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <Github className="w-4 h-4 mr-2" />
+                      Create New Token
+                    </>
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="token" className="text-sm font-medium">
+                    Personal Access Token
+                  </label>
+                  <Textarea
+                    id="token"
+                    placeholder="Paste your GitHub Personal Access Token here..."
+                    value={tokenInput}
+                    onChange={(e) => setTokenInput(e.target.value)}
+                    className="min-h-[100px] font-mono text-sm"
+                  />
+                </div>
+                <div className="flex space-x-2">
+                  <Button 
+                    onClick={handleTokenSubmit}
+                    disabled={!tokenInput.trim() || isConnecting}
+                    className="flex-1"
+                  >
+                    {isConnecting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Connecting...
+                      </>
+                    ) : (
+                      'Connect'
+                    )}
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      setShowTokenInput(false);
+                      setTokenInput('');
+                    }}
+                    variant="outline"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
         
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            <strong>How it works:</strong>
+            <strong>How to get your Personal Access Token:</strong>
             <ol className="list-decimal list-inside mt-2 space-y-1">
-              <li>Click "Authorize FundChain" to open GitHub</li>
-              <li>Create a Personal Access Token with required permissions</li>
-              <li>Paste the token to complete the connection</li>
-              <li>Your repositories will be synced automatically</li>
+              <li>Go to GitHub Settings → Developer settings → Personal access tokens</li>
+              <li>Click "Generate new token (classic)"</li>
+              <li>Select scopes: <code>repo</code>, <code>user:email</code>, <code>read:user</code></li>
+              <li>Copy the generated token and paste it above</li>
             </ol>
           </AlertDescription>
         </Alert>
