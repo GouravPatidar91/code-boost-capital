@@ -30,7 +30,8 @@ export const GitHubIntegration = () => {
     connectGitHub, 
     disconnectGitHub, 
     fetchUserRepos, 
-    syncRepository 
+    syncRepository,
+    verifyAndConnectToken
   } = useGitHubAuth();
   
   const [repositories, setRepositories] = useState<Repository[]>([]);
@@ -69,8 +70,6 @@ export const GitHubIntegration = () => {
   const handleTokenSubmit = async () => {
     if (!tokenInput.trim()) return;
     
-    // Use the existing verifyAndConnectToken function from the hook
-    const { verifyAndConnectToken } = useGitHubAuth();
     await verifyAndConnectToken(tokenInput.trim());
     setTokenInput('');
     setShowTokenInput(false);
