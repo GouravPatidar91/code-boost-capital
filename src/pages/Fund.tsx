@@ -60,8 +60,8 @@ const Fund = () => {
       const ethAmount = (parseFloat(fundingAmount) / 3000).toFixed(6); // Assuming 1 ETH = $3000
 
       // For demo purposes, we'll use a placeholder recipient address
-      // In a real app, this would be the startup's wallet address
-      const recipientAddress = startup?.developers?.wallet_address || '0x742d35Cc6634C0532925a3b8D4e7C02FFDF5fBE';
+      // In a real app, this would be the startup's wallet address from the developers table
+      const recipientAddress = '0x742d35Cc6634C0532925a3b8D4e7C02FFDF5fBE';
 
       const transactionHash = await sendTransaction(recipientAddress, ethAmount);
 
