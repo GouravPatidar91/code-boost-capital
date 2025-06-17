@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useGitHubAuth } from '@/hooks/useGitHubAuth';
-import { Github, GitBranch, Star, GitCommit, ExternalLink } from 'lucide-react';
+import { Github, GitBranch, Star, ExternalLink, AlertCircle } from 'lucide-react';
 
 interface Repository {
   id: number;
@@ -54,23 +55,37 @@ export const GitHubIntegration = () => {
 
   if (!isConnected) {
     return (
-      <Card className="w-full max-w-md mx-auto">
-        <CardHeader className="text-center">
-          <CardTitle className="flex items-center justify-center space-x-2">
-            <Github className="w-6 h-6" />
-            <span>Connect GitHub</span>
-          </CardTitle>
-          <CardDescription>
-            Connect your GitHub account to sync repositories and track contributions
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button onClick={connectGitHub} className="w-full">
-            <Github className="w-4 h-4 mr-2" />
-            Connect with GitHub
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <Card className="w-full max-w-md mx-auto">
+          <CardHeader className="text-center">
+            <CardTitle className="flex items-center justify-center space-x-2">
+              <Github className="w-6 h-6" />
+              <span>Connect GitHub</span>
+            </CardTitle>
+            <CardDescription>
+              Connect your GitHub account to sync repositories and track contributions
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={connectGitHub} className="w-full">
+              <Github className="w-4 h-4 mr-2" />
+              Connect with GitHub
+            </Button>
+          </CardContent>
+        </Card>
+        
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Setup Required:</strong> To use real GitHub integration, you need to:
+            <ol className="list-decimal list-inside mt-2 space-y-1">
+              <li>Create a GitHub OAuth App in your GitHub Developer Settings</li>
+              <li>Add your GitHub Client ID and Client Secret to the project secrets</li>
+              <li>Set the Authorization callback URL to: <code>{window.location.origin}/dashboard</code></li>
+            </ol>
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 

@@ -20,72 +20,63 @@ export const useGitHubAuth = () => {
       setIsConnected(true);
     }
 
-    // Handle OAuth callback from popup
-    const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
+    // Handle OAuth callback from URL parameters
+    const checkOAuthCallback = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      const state = urlParams.get('state');
       
-      if (event.data.type === 'GITHUB_AUTH_SUCCESS') {
-        const { token, user } = event.data;
-        setGithubToken(token);
-        setGithubUser(user);
-        setIsConnected(true);
-        
-        // Store in localStorage
-        localStorage.setItem('github_token', token);
-        localStorage.setItem('github_user', JSON.stringify(user));
-        
-        toast({
-          title: "GitHub Connected!",
-          description: "Successfully connected to your GitHub account.",
-        });
-      } else if (event.data.type === 'GITHUB_AUTH_ERROR') {
-        toast({
-          title: "Connection Failed",
-          description: event.data.error || "Failed to connect to GitHub.",
-          variant: "destructive"
-        });
+      if (code && state === 'github_oauth') {
+        try {
+          // Exchange code for access token via our edge function
+          const { data, error } = await supabase.functions.invoke('github-oauth', {
+            body: { code }
+          });
+
+          if (error) throw error;
+
+          const { access_token, user } = data;
+          
+          setGithubToken(access_token);
+          setGithubUser(user);
+          setIsConnected(true);
+          
+          // Store in localStorage
+          localStorage.setItem('github_token', access_token);
+          localStorage.setItem('github_user', JSON.stringify(user));
+          
+          // Clean up URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+          
+          toast({
+            title: "GitHub Connected!",
+            description: "Successfully connected to your GitHub account.",
+          });
+        } catch (error) {
+          console.error('OAuth callback error:', error);
+          toast({
+            title: "Connection Failed",
+            description: "Failed to complete GitHub authentication.",
+            variant: "destructive"
+          });
+        }
       }
     };
 
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+    checkOAuthCallback();
   }, [toast]);
 
   const connectGitHub = () => {
-    // For demo purposes, we'll simulate the OAuth flow
-    // In a real implementation, you would need to set up GitHub OAuth app
-    // and handle the actual OAuth flow through Supabase Auth or a custom implementation
-    
-    toast({
-      title: "GitHub OAuth Setup Required",
-      description: "Please configure GitHub OAuth credentials in your project settings.",
-      variant: "destructive"
-    });
+    // GitHub OAuth configuration
+    const clientId = 'YOUR_GITHUB_CLIENT_ID'; // This will be set in the edge function
+    const redirectUri = `${window.location.origin}/dashboard`;
+    const scope = 'repo,user:email';
+    const state = 'github_oauth';
 
-    // Temporary demo connection for testing
-    setTimeout(() => {
-      const demoUser = {
-        login: 'demo-user',
-        id: 123456,
-        avatar_url: 'https://github.com/github.png',
-        name: 'Demo User',
-        email: 'demo@example.com'
-      };
-      
-      const demoToken = 'demo-token-' + Date.now();
-      
-      setGithubToken(demoToken);
-      setGithubUser(demoUser);
-      setIsConnected(true);
-      
-      localStorage.setItem('github_token', demoToken);
-      localStorage.setItem('github_user', JSON.stringify(demoUser));
-      
-      toast({
-        title: "Demo Mode",
-        description: "Connected in demo mode. Configure GitHub OAuth for real integration.",
-      });
-    }, 1000);
+    // Redirect to GitHub OAuth
+    const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&state=${state}`;
+    
+    window.location.href = githubAuthUrl;
   };
 
   const disconnectGitHub = () => {
@@ -141,36 +132,6 @@ export const useGitHubAuth = () => {
 
   const fetchUserRepos = async () => {
     if (!githubToken) return [];
-
-    // In demo mode, return mock repositories
-    if (githubToken.startsWith('demo-token')) {
-      return [
-        {
-          id: 1,
-          name: 'awesome-project',
-          full_name: 'demo-user/awesome-project',
-          description: 'An awesome demo project',
-          html_url: 'https://github.com/demo-user/awesome-project',
-          language: 'TypeScript',
-          stargazers_count: 42,
-          forks_count: 7,
-          updated_at: new Date().toISOString(),
-          private: false
-        },
-        {
-          id: 2,
-          name: 'react-components',
-          full_name: 'demo-user/react-components',
-          description: 'Reusable React components library',
-          html_url: 'https://github.com/demo-user/react-components',
-          language: 'JavaScript',
-          stargazers_count: 15,
-          forks_count: 3,
-          updated_at: new Date().toISOString(),
-          private: false
-        }
-      ];
-    }
 
     try {
       const { data, error } = await supabase.functions.invoke('github-sync', {
