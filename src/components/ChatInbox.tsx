@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRealTimeChat } from '@/hooks/useRealTimeChat';
+import { useCDPWallet } from '@/hooks/useCDPWallet';
 import { MessageSquare, User, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -15,11 +16,15 @@ interface ChatInboxProps {
 }
 
 export const ChatInbox = ({ startupId, startupName }: ChatInboxProps) => {
-  const { messages, loading } = useRealTimeChat(startupId);
+  const { account } = useCDPWallet();
+  const { messages, loading } = useRealTimeChat(startupId, account);
   const navigate = useNavigate();
   
-  // Group messages by sender to show conversations
+  // Group messages by funder (since founder sees all conversations)
   const conversations = messages.reduce((acc, message) => {
+    // Skip founder messages when grouping (they are responses)
+    if (message.sender_type === 'founder') return acc;
+    
     const key = message.sender_wallet_address || 'anonymous';
     if (!acc[key]) {
       acc[key] = [];
@@ -31,7 +36,11 @@ export const ChatInbox = ({ startupId, startupName }: ChatInboxProps) => {
   const conversationList = Object.entries(conversations).map(([senderAddress, msgs]) => {
     const lastMessage = msgs[msgs.length - 1];
     const messageCount = msgs.length;
-    const unreadCount = msgs.filter(msg => msg.sender_type === 'funder').length;
+    // Count unread messages from this specific funder
+    const unreadCount = msgs.filter(msg => 
+      msg.sender_type === 'funder' && 
+      msg.sender_wallet_address === senderAddress
+    ).length;
     
     return {
       senderAddress,
@@ -72,7 +81,7 @@ export const ChatInbox = ({ startupId, startupName }: ChatInboxProps) => {
             </Badge>
           )}
         </CardTitle>
-        <CardDescription>Messages from potential funders</CardDescription>
+        <CardDescription>Messages from potential funders for {startupName}</CardDescription>
       </CardHeader>
       
       <CardContent>
@@ -101,7 +110,7 @@ export const ChatInbox = ({ startupId, startupName }: ChatInboxProps) => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <p className="text-sm font-medium text-gray-900">
-                          {conversation.senderAddress.substring(0, 6)}...{conversation.senderAddress.substring(38)}
+                          Funder: {conversation.senderAddress.substring(0, 6)}...{conversation.senderAddress.substring(38)}
                         </p>
                         <div className="flex items-center space-x-2">
                           {conversation.unreadCount > 0 && (
@@ -121,7 +130,7 @@ export const ChatInbox = ({ startupId, startupName }: ChatInboxProps) => {
                       </p>
                       
                       <div className="mt-1 text-xs text-gray-500">
-                        {conversation.messageCount} message{conversation.messageCount > 1 ? 's' : ''}
+                        {conversation.messageCount} message{conversation.messageCount > 1 ? 's' : ''} from this funder
                       </div>
                     </div>
                   </div>

@@ -14,16 +14,19 @@ const Chat = () => {
   const { id } = useParams();
   const [message, setMessage] = useState('');
   const { startups, loading } = useStartupListings();
-  const { messages, loading: chatLoading, sendMessage } = useRealTimeChat(id || '');
   const { account } = useCDPWallet();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const startup = startups?.find(s => s.id === id);
   
-  // Automatically determine user type based on whether they own the startup
-  const isFounder = startup?.developers?.github_username && account ? 
-    startup.developers.github_username === account : false;
+  // Determine if current user is the founder by checking if they own this startup
+  const isFounder = startup?.developers?.github_username ? 
+    account === startup.developers.github_username : false;
+  
   const userType = isFounder ? 'founder' : 'funder';
+  
+  // Pass the user's wallet address for filtering messages
+  const { messages, loading: chatLoading, sendMessage } = useRealTimeChat(id || '', account);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -34,8 +37,8 @@ const Chat = () => {
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (message.trim() && id) {
-      const success = await sendMessage(message.trim(), userType, account || undefined);
+    if (message.trim() && id && account) {
+      const success = await sendMessage(message.trim(), userType, account);
       if (success) {
         setMessage('');
       }
@@ -64,6 +67,22 @@ const Chat = () => {
           <div className="text-lg text-gray-600 mb-4">Startup not found</div>
           <Button asChild>
             <Link to="/explore">Back to Explore</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!account) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg text-gray-600 mb-4">Please connect your wallet to chat</div>
+          <Button asChild>
+            <Link to={isFounder ? "/dashboard" : "/explore"}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Go Back
+            </Link>
           </Button>
         </div>
       </div>
@@ -181,7 +200,7 @@ const Chat = () => {
                 <Button 
                   onClick={handleSendMessage}
                   size="sm"
-                  disabled={!message.trim()}
+                  disabled={!message.trim() || !account}
                 >
                   <Send className="w-4 h-4" />
                 </Button>
