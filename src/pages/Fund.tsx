@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,12 +11,81 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Github, Shield, Star, DollarSign, Wallet } from 'lucide-react';
 import { useStartupListings } from '@/hooks/useStartupListings';
+import { useCDPWallet } from '@/hooks/useCDPWallet';
+import { useToast } from '@/hooks/use-toast';
 
 const Fund = () => {
   const { id } = useParams();
   const { startups, loading } = useStartupListings();
+  const { isConnected, account, balance, connectWallet, sendTransaction } = useCDPWallet();
+  const { toast } = useToast();
+  const [fundingAmount, setFundingAmount] = useState('');
+  const [message, setMessage] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   
   const startup = startups?.find(s => s.id === id);
+
+  const handleFunding = async () => {
+    if (!isConnected) {
+      toast({
+        title: "Wallet not connected",
+        description: "Please connect your wallet first to fund this startup.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!fundingAmount || parseFloat(fundingAmount) <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter a valid funding amount.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (parseFloat(fundingAmount) > parseFloat(balance)) {
+      toast({
+        title: "Insufficient balance",
+        description: "You don't have enough ETH to complete this transaction.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      // Convert USD to ETH (simplified conversion - in real app you'd use current exchange rate)
+      const ethAmount = (parseFloat(fundingAmount) / 3000).toFixed(6); // Assuming 1 ETH = $3000
+
+      // For demo purposes, we'll use a placeholder recipient address
+      // In a real app, this would be the startup's wallet address
+      const recipientAddress = startup?.developers?.wallet_address || '0x742d35Cc6634C0532925a3b8D4e7C02FFDF5fBE';
+
+      const transactionHash = await sendTransaction(recipientAddress, ethAmount);
+
+      if (transactionHash) {
+        toast({
+          title: "Funding Successful!",
+          description: `Successfully sent $${fundingAmount} to ${startup?.startup_name}`,
+        });
+
+        // Reset form
+        setFundingAmount('');
+        setMessage('');
+      }
+    } catch (error) {
+      console.error('Funding error:', error);
+      toast({
+        title: "Funding Failed",
+        description: "There was an error processing your funding. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -143,47 +212,96 @@ const Fund = () => {
             </CardHeader>
             
             <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="amount">Funding Amount (USD)</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  placeholder="Enter amount"
-                  min="100"
-                  step="100"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="message">Message (Optional)</Label>
-                <Textarea
-                  id="message"
-                  placeholder="Add a message to the founder..."
-                  rows={3}
-                />
-              </div>
-
+              {/* Wallet Status */}
               <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-medium mb-2">Funding Terms</h4>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Milestone-based payment release</li>
-                  <li>• Smart contract secured transactions</li>
-                  <li>• Full transparency on fund usage</li>
-                  <li>• Regular progress updates</li>
-                </ul>
+                <h4 className="font-medium mb-2">Wallet Status</h4>
+                {isConnected ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Connected Address</span>
+                      <span className="font-mono text-xs">
+                        {account?.substring(0, 6)}...{account?.substring(38)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Balance</span>
+                      <span className="font-semibold">{balance} ETH</span>
+                    </div>
+                    <Badge variant="secondary" className="bg-green-100 text-green-800">
+                      <Wallet className="w-3 h-3 mr-1" />
+                      Wallet Connected
+                    </Badge>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <p className="text-gray-600 mb-3">No wallet connected</p>
+                    <Button onClick={connectWallet} className="w-full">
+                      <Wallet className="w-4 h-4 mr-2" />
+                      Connect CDP Wallet
+                    </Button>
+                  </div>
+                )}
               </div>
 
-              <div className="space-y-3">
-                <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600" size="lg">
-                  <Wallet className="w-4 h-4 mr-2" />
-                  Connect Wallet to Fund
-                </Button>
-                
-                <p className="text-xs text-gray-500 text-center">
-                  By funding this startup, you agree to our terms and conditions. 
-                  Funds will be held in escrow until milestones are met.
-                </p>
-              </div>
+              {isConnected && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="amount">Funding Amount (USD)</Label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      placeholder="Enter amount"
+                      min="100"
+                      step="100"
+                      value={fundingAmount}
+                      onChange={(e) => setFundingAmount(e.target.value)}
+                    />
+                    {fundingAmount && (
+                      <p className="text-xs text-gray-500">
+                        ≈ {(parseFloat(fundingAmount) / 3000).toFixed(6)} ETH
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="message">Message (Optional)</Label>
+                    <Textarea
+                      id="message"
+                      placeholder="Add a message to the founder..."
+                      rows={3}
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium mb-2">Funding Terms</h4>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>• Milestone-based payment release</li>
+                      <li>• Smart contract secured transactions</li>
+                      <li>• Full transparency on fund usage</li>
+                      <li>• Regular progress updates</li>
+                    </ul>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Button 
+                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600" 
+                      size="lg"
+                      onClick={handleFunding}
+                      disabled={isProcessing || !fundingAmount}
+                    >
+                      <DollarSign className="w-4 h-4 mr-2" />
+                      {isProcessing ? 'Processing...' : `Fund $${fundingAmount || '0'}`}
+                    </Button>
+                    
+                    <p className="text-xs text-gray-500 text-center">
+                      By funding this startup, you agree to our terms and conditions. 
+                      Funds will be held in escrow until milestones are met.
+                    </p>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
