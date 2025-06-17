@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -88,21 +87,20 @@ export const useStartupListings = () => {
 
     setLoading(true);
     try {
-      console.log('Fetching startups for user email:', userEmail);
+      console.log('Fetching startups for authenticated user:', userEmail);
       
-      // First, let's try a broader search to see if there are any startups at all
-      const { data: allStartups, error: allError } = await supabase
-        .from('startup_listings')
-        .select('contact_email, startup_name')
-        .limit(5);
+      // Verify user is authenticated before making the request
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
       
-      if (allError) {
-        console.error('Error fetching all startups for debugging:', allError);
-      } else {
-        console.log('Sample startups in database:', allStartups);
+      if (authError || !user) {
+        throw new Error('User not authenticated');
       }
 
-      // Now fetch startups for the specific user
+      if (user.email !== userEmail) {
+        throw new Error('Email mismatch - security violation');
+      }
+
+      // Fetch startups only for the authenticated user's email
       const { data, error } = await supabase
         .from('startup_listings')
         .select(`
@@ -128,33 +126,22 @@ export const useStartupListings = () => {
         throw error;
       }
       
-      console.log('Fetched user startups:', data);
+      console.log(`Found ${data?.length || 0} startups for user:`, userEmail);
       setStartups(data || []);
       
       if (!data || data.length === 0) {
-        console.log('No startups found for user:', userEmail);
-        console.log('This could mean:');
-        console.log('1. No startups have been created with this email');
-        console.log('2. The contact_email in the database doesn\'t match the logged-in user email');
-        
-        // Let's also check if there are startups with similar emails
-        const { data: similarEmails } = await supabase
-          .from('startup_listings')
-          .select('contact_email, startup_name')
-          .ilike('contact_email', `%${userEmail.split('@')[0]}%`);
-        
-        if (similarEmails && similarEmails.length > 0) {
-          console.log('Found startups with similar email patterns:', similarEmails);
-        }
+        console.log('No startups found for authenticated user:', userEmail);
       }
     } catch (error) {
       console.error('Error fetching user startups:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch your startup listings. Please try again.",
+        description: error.message === 'User not authenticated' 
+          ? "Please log in to view your startups." 
+          : "Failed to fetch your startup listings. Please try again.",
         variant: "destructive"
       });
-      setStartups([]); // Set empty array on error
+      setStartups([]);
     } finally {
       setLoading(false);
     }

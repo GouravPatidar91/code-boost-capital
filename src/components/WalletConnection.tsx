@@ -1,15 +1,26 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCDPWallet } from '@/hooks/useCDPWallet';
-import { Wallet, ExternalLink, Copy } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Wallet, ExternalLink, Copy, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export const WalletConnection = () => {
   const { isConnected, account, balance, connectWallet, disconnectWallet, fetchBalance } = useCDPWallet();
+  const [authenticatedUser, setAuthenticatedUser] = useState(null);
   const { toast } = useToast();
+
+  // Check if user is authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setAuthenticatedUser(user);
+    };
+    checkAuth();
+  }, []);
 
   const copyAddress = () => {
     if (account) {
@@ -25,6 +36,47 @@ export const WalletConnection = () => {
     return `${address.substring(0, 6)}...${address.substring(38)}`;
   };
 
+  const handleConnectWallet = async () => {
+    if (!authenticatedUser) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in before connecting your wallet.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    await connectWallet();
+  };
+
+  // Show authentication required message if user is not logged in
+  if (!authenticatedUser) {
+    return (
+      <Card className="w-full">
+        <CardHeader className="text-center">
+          <CardTitle className="flex items-center justify-center space-x-2">
+            <Shield className="w-6 h-6 text-red-500" />
+            <span>Authentication Required</span>
+          </CardTitle>
+          <CardDescription>
+            Please log in to your account to connect your wallet
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="text-center">
+          <p className="text-gray-600 mb-4">
+            You need to be authenticated to connect and manage your wallet.
+          </p>
+          <Button 
+            onClick={() => window.location.href = '/auth'}
+            className="bg-gradient-to-r from-purple-600 to-blue-600"
+          >
+            Go to Login
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!isConnected) {
     return (
       <Card className="w-full max-w-md mx-auto">
@@ -38,7 +90,7 @@ export const WalletConnection = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button onClick={connectWallet} className="w-full">
+          <Button onClick={handleConnectWallet} className="w-full">
             <Wallet className="w-4 h-4 mr-2" />
             Connect Wallet
           </Button>

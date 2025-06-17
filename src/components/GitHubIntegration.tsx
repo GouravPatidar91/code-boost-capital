@@ -7,7 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useGitHubAuth } from '@/hooks/useGitHubAuth';
-import { Github, GitBranch, Star, ExternalLink, AlertCircle, Loader2, Key } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Github, GitBranch, Star, ExternalLink, AlertCircle, Loader2, Key, Shield } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface Repository {
   id: number;
@@ -39,29 +41,63 @@ export const GitHubIntegration = () => {
   const [syncing, setSyncing] = useState<string | null>(null);
   const [tokenInput, setTokenInput] = useState('');
   const [showTokenInput, setShowTokenInput] = useState(false);
+  const [authenticatedUser, setAuthenticatedUser] = useState(null);
+  const { toast } = useToast();
+
+  // Check if user is authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setAuthenticatedUser(user);
+    };
+    checkAuth();
+  }, []);
 
   useEffect(() => {
-    if (isConnected) {
+    if (isConnected && authenticatedUser) {
       loadRepositories();
     }
-  }, [isConnected]);
+  }, [isConnected, authenticatedUser]);
 
   const loadRepositories = async () => {
+    if (!authenticatedUser) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to view repositories.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const repos = await fetchUserRepos();
       setRepositories(repos);
     } catch (error) {
       console.error('Error loading repositories:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load repositories. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const handleSyncRepository = async (repo: Repository) => {
+    if (!authenticatedUser) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to sync repositories.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setSyncing(repo.full_name);
     try {
-      await syncRepository(repo.full_name, 'developer-id');
+      await syncRepository(repo.full_name, authenticatedUser.id);
     } finally {
       setSyncing(null);
     }
@@ -70,15 +106,52 @@ export const GitHubIntegration = () => {
   const handleTokenSubmit = async () => {
     if (!tokenInput.trim()) return;
     
+    if (!authenticatedUser) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in before connecting GitHub.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     await verifyAndConnectToken(tokenInput.trim());
     setTokenInput('');
     setShowTokenInput(false);
   };
 
+  // Show authentication required message if user is not logged in
+  if (!authenticatedUser) {
+    return (
+      <Card className="w-full">
+        <CardHeader className="text-center">
+          <CardTitle className="flex items-center justify-center space-x-2">
+            <Shield className="w-6 h-6 text-red-500" />
+            <span>Authentication Required</span>
+          </CardTitle>
+          <CardDescription>
+            Please log in to your account to connect GitHub integration
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="text-center">
+          <p className="text-gray-600 mb-4">
+            You need to be authenticated to access GitHub integration features.
+          </p>
+          <Button 
+            onClick={() => window.location.href = '/auth'}
+            className="bg-gradient-to-r from-purple-600 to-blue-600"
+          >
+            Go to Login
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!isConnected) {
     return (
       <div className="space-y-4">
-        <Card className="w-full max-w-md mx-auto">
+        <Card className="w-full">
           <CardHeader className="text-center">
             <CardTitle className="flex items-center justify-center space-x-2">
               <Github className="w-6 h-6" />

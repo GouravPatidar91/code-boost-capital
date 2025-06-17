@@ -9,82 +9,163 @@ import { ChatInbox } from '@/components/ChatInbox';
 import { StartupCard } from '@/components/StartupCard';
 import { useStartupListings } from '@/hooks/useStartupListings';
 import { supabase } from '@/integrations/supabase/client';
-import { Github, Plus, AlertCircle } from 'lucide-react';
+import { Github, Plus, AlertCircle, LogOut, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const { startups, loading, fetchUserStartups } = useStartupListings();
   const [user, setUser] = useState(null);
+  const [session, setSession] = useState(null);
   const [aiAnalysisStartupId, setAiAnalysisStartupId] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const toggleAIAnalysis = (startupId: string) => {
     setAiAnalysisStartupId(aiAnalysisStartupId === startupId ? null : startupId);
   };
 
-  // Check authentication and fetch user startups
+  // Handle user logout
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account.",
+      });
+      
+      navigate('/auth');
+    } catch (error) {
+      console.error('Error logging out:', error);
+      toast({
+        title: "Logout failed",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Check authentication and fetch user data
   useEffect(() => {
-    const getUser = async () => {
+    let mounted = true;
+
+    const initializeAuth = async () => {
       try {
+        // Get current session
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('Error getting session:', error);
-          toast({
-            title: "Authentication Error",
-            description: "Failed to get user session.",
-            variant: "destructive"
-          });
+          if (mounted) {
+            setAuthLoading(false);
+            navigate('/auth');
+          }
           return;
         }
 
-        if (session?.user) {
+        if (session?.user && mounted) {
           console.log('User authenticated:', session.user.email);
           setUser(session.user);
+          setSession(session);
           
-          // Fetch user startups using the authenticated user's email
+          // Fetch user-specific startups
           if (session.user.email) {
             await fetchUserStartups(session.user.email);
           }
-        } else {
-          console.log('No authenticated user');
-          setUser(null);
+        } else if (mounted) {
+          console.log('No authenticated user, redirecting to auth');
+          navigate('/auth');
         }
       } catch (error) {
-        console.error('Error in getUser:', error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch user data.",
-          variant: "destructive"
-        });
+        console.error('Error in auth initialization:', error);
+        if (mounted) {
+          toast({
+            title: "Authentication Error",
+            description: "Failed to verify authentication. Please log in again.",
+            variant: "destructive"
+          });
+          navigate('/auth');
+        }
+      } finally {
+        if (mounted) {
+          setAuthLoading(false);
+        }
       }
     };
 
-    getUser();
+    initializeAuth();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        console.log('Auth state changed - user logged in:', session.user.email);
+      if (!mounted) return;
+
+      console.log('Auth state changed:', event, session?.user?.email);
+      
+      if (event === 'SIGNED_OUT' || !session) {
+        setUser(null);
+        setSession(null);
+        navigate('/auth');
+        return;
+      }
+
+      if (event === 'SIGNED_IN' && session?.user) {
         setUser(session.user);
+        setSession(session);
         
-        // Fetch user startups when auth state changes
+        // Fetch user-specific startups when user signs in
         if (session.user.email) {
           await fetchUserStartups(session.user.email);
         }
-      } else {
-        console.log('Auth state changed - user logged out');
-        setUser(null);
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, [fetchUserStartups, toast]);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [navigate, fetchUserStartups, toast]);
+
+  // Show loading state during auth check
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Verifying authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect if not authenticated (this should not be reached due to useEffect redirect)
+  if (!user || !session) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Developer Dashboard</h1>
+        {/* Header with user info and logout */}
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold">Developer Dashboard</h1>
+            <p className="text-gray-600 flex items-center mt-1">
+              <User className="w-4 h-4 mr-2" />
+              Welcome, {user.email}
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={handleLogout}
+            className="flex items-center space-x-2"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Logout</span>
+          </Button>
+        </div>
         
         <Tabs defaultValue="funding" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
@@ -106,18 +187,9 @@ const Dashboard = () => {
               </Button>
             </div>
 
-            {!user ? (
-              <Card className="text-center py-12">
-                <CardContent>
-                  <div className="text-lg text-gray-600 mb-4">Authentication Required</div>
-                  <p className="text-gray-500 mb-6">Please log in to see your startups</p>
-                  <Button className="bg-gradient-to-r from-purple-600 to-blue-600">
-                    Log In
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : loading ? (
+            {loading ? (
               <div className="text-center py-12">
+                <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                 <div className="text-lg text-gray-600">Loading your startups...</div>
               </div>
             ) : !startups || startups.length === 0 ? (
@@ -135,9 +207,10 @@ const Dashboard = () => {
                     <Button 
                       className="bg-gradient-to-r from-purple-600 to-blue-600"
                       onClick={() => fetchUserStartups(user.email)}
+                      disabled={loading}
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      Refresh / Try Again
+                      {loading ? 'Loading...' : 'Refresh / Try Again'}
                     </Button>
                     <div className="text-xs text-gray-400">
                       or
@@ -172,18 +245,9 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {!user ? (
-              <Card className="text-center py-12">
-                <CardContent>
-                  <div className="text-lg text-gray-600 mb-4">Authentication Required</div>
-                  <p className="text-gray-500 mb-6">Please log in to see your messages</p>
-                  <Button className="bg-gradient-to-r from-purple-600 to-blue-600">
-                    Log In
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : loading ? (
+            {loading ? (
               <div className="text-center py-12">
+                <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                 <div className="text-lg text-gray-600">Loading chat data...</div>
               </div>
             ) : !startups || startups.length === 0 ? (
