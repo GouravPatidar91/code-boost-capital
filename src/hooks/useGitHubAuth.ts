@@ -19,20 +19,9 @@ export const useGitHubAuth = () => {
       setGithubUser(JSON.parse(user));
       setIsConnected(true);
     }
-  }, []);
 
-  const connectGitHub = () => {
-    const clientId = 'your_github_client_id'; // You'll need to set this up
-    const redirectUri = `${window.location.origin}/github/callback`;
-    const scope = 'repo,user:email';
-    
-    const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`;
-    
-    // Open GitHub OAuth in a popup
-    const popup = window.open(authUrl, 'github-auth', 'width=600,height=600');
-    
-    // Listen for the callback
-    const messageListener = (event: MessageEvent) => {
+    // Handle OAuth callback from popup
+    const handleMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
       
       if (event.data.type === 'GITHUB_AUTH_SUCCESS') {
@@ -49,13 +38,54 @@ export const useGitHubAuth = () => {
           title: "GitHub Connected!",
           description: "Successfully connected to your GitHub account.",
         });
-        
-        popup?.close();
-        window.removeEventListener('message', messageListener);
+      } else if (event.data.type === 'GITHUB_AUTH_ERROR') {
+        toast({
+          title: "Connection Failed",
+          description: event.data.error || "Failed to connect to GitHub.",
+          variant: "destructive"
+        });
       }
     };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [toast]);
+
+  const connectGitHub = () => {
+    // For demo purposes, we'll simulate the OAuth flow
+    // In a real implementation, you would need to set up GitHub OAuth app
+    // and handle the actual OAuth flow through Supabase Auth or a custom implementation
     
-    window.addEventListener('message', messageListener);
+    toast({
+      title: "GitHub OAuth Setup Required",
+      description: "Please configure GitHub OAuth credentials in your project settings.",
+      variant: "destructive"
+    });
+
+    // Temporary demo connection for testing
+    setTimeout(() => {
+      const demoUser = {
+        login: 'demo-user',
+        id: 123456,
+        avatar_url: 'https://github.com/github.png',
+        name: 'Demo User',
+        email: 'demo@example.com'
+      };
+      
+      const demoToken = 'demo-token-' + Date.now();
+      
+      setGithubToken(demoToken);
+      setGithubUser(demoUser);
+      setIsConnected(true);
+      
+      localStorage.setItem('github_token', demoToken);
+      localStorage.setItem('github_user', JSON.stringify(demoUser));
+      
+      toast({
+        title: "Demo Mode",
+        description: "Connected in demo mode. Configure GitHub OAuth for real integration.",
+      });
+    }, 1000);
   };
 
   const disconnectGitHub = () => {
@@ -111,6 +141,36 @@ export const useGitHubAuth = () => {
 
   const fetchUserRepos = async () => {
     if (!githubToken) return [];
+
+    // In demo mode, return mock repositories
+    if (githubToken.startsWith('demo-token')) {
+      return [
+        {
+          id: 1,
+          name: 'awesome-project',
+          full_name: 'demo-user/awesome-project',
+          description: 'An awesome demo project',
+          html_url: 'https://github.com/demo-user/awesome-project',
+          language: 'TypeScript',
+          stargazers_count: 42,
+          forks_count: 7,
+          updated_at: new Date().toISOString(),
+          private: false
+        },
+        {
+          id: 2,
+          name: 'react-components',
+          full_name: 'demo-user/react-components',
+          description: 'Reusable React components library',
+          html_url: 'https://github.com/demo-user/react-components',
+          language: 'JavaScript',
+          stargazers_count: 15,
+          forks_count: 3,
+          updated_at: new Date().toISOString(),
+          private: false
+        }
+      ];
+    }
 
     try {
       const { data, error } = await supabase.functions.invoke('github-sync', {

@@ -15,8 +15,7 @@ export const useCDPWallet = () => {
     // Initialize Coinbase Wallet SDK
     const coinbaseWallet = new CoinbaseWalletSDK({
       appName: 'FundChain',
-      appLogoUrl: 'https://your-app-logo.com/logo.png',
-      darkMode: false
+      appLogoUrl: 'https://your-app-logo.com/logo.png'
     });
 
     setWallet(coinbaseWallet);
@@ -27,7 +26,7 @@ export const useCDPWallet = () => {
         const provider = coinbaseWallet.makeWeb3Provider();
         const accounts = await provider.request({
           method: 'eth_accounts'
-        });
+        }) as string[];
         
         if (accounts && accounts.length > 0) {
           setAccount(accounts[0]);
@@ -56,7 +55,7 @@ export const useCDPWallet = () => {
       const provider = wallet.makeWeb3Provider();
       const accounts = await provider.request({
         method: 'eth_requestAccounts'
-      });
+      }) as string[];
 
       if (accounts && accounts.length > 0) {
         const walletAddress = accounts[0];
@@ -101,7 +100,7 @@ export const useCDPWallet = () => {
       const balance = await provider.request({
         method: 'eth_getBalance',
         params: [address, 'latest']
-      });
+      }) as string;
 
       // Convert from wei to ETH
       const balanceInEth = parseInt(balance, 16) / Math.pow(10, 18);
@@ -157,7 +156,7 @@ export const useCDPWallet = () => {
           to: to,
           value: amountInWei,
         }]
-      });
+      }) as string;
 
       toast({
         title: "Transaction Sent!",
