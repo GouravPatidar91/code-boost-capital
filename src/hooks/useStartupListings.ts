@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -26,6 +25,7 @@ interface StartupListing {
     language: string | null;
     stars_count: number;
     forks_count: number;
+    html_url: string;
   } | null;
   developers: {
     github_username: string;
@@ -50,7 +50,8 @@ export const useStartupListings = () => {
             description,
             language,
             stars_count,
-            forks_count
+            forks_count,
+            html_url
           ),
           developers (
             github_username
