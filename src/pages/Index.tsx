@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Github, Wallet, Shield, TrendingUp, Users, MessageSquare, Star, GitCommit, DollarSign } from 'lucide-react';
+import { Github, Wallet, Shield, TrendingUp, Users, MessageSquare, Star, GitCommit, DollarSign, Settings } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Index = () => {
   const [userRole, setUserRole] = useState<'founder' | 'funder'>('funder');
@@ -99,9 +99,11 @@ const Index = () => {
                 </Button>
               </div>
               
-              <Button variant="outline" size="sm">
-                <Github className="w-4 h-4 mr-2" />
-                Connect GitHub
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/dashboard">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Dashboard
+                </Link>
               </Button>
               
               <Button className="bg-gradient-to-r from-purple-600 to-blue-600">

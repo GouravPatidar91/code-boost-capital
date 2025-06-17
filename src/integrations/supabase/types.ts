@@ -145,6 +145,186 @@ export type Database = {
         }
         Relationships: []
       }
+      funding_transactions: {
+        Row: {
+          amount_crypto: number
+          amount_usd: number
+          completed_at: string | null
+          created_at: string
+          currency: string
+          funder_wallet_address: string
+          grant_id: string | null
+          id: string
+          milestone_id: string | null
+          recipient_wallet_address: string
+          status: string | null
+          transaction_hash: string | null
+        }
+        Insert: {
+          amount_crypto: number
+          amount_usd: number
+          completed_at?: string | null
+          created_at?: string
+          currency: string
+          funder_wallet_address: string
+          grant_id?: string | null
+          id?: string
+          milestone_id?: string | null
+          recipient_wallet_address: string
+          status?: string | null
+          transaction_hash?: string | null
+        }
+        Update: {
+          amount_crypto?: number
+          amount_usd?: number
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          funder_wallet_address?: string
+          grant_id?: string | null
+          id?: string
+          milestone_id?: string | null
+          recipient_wallet_address?: string
+          status?: string | null
+          transaction_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funding_transactions_grant_id_fkey"
+            columns: ["grant_id"]
+            isOneToOne: false
+            referencedRelation: "grants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      github_commits: {
+        Row: {
+          additions: number | null
+          author_email: string | null
+          author_name: string | null
+          created_at: string
+          deletions: number | null
+          id: string
+          message: string | null
+          repository_id: string | null
+          sha: string
+          timestamp: string | null
+        }
+        Insert: {
+          additions?: number | null
+          author_email?: string | null
+          author_name?: string | null
+          created_at?: string
+          deletions?: number | null
+          id?: string
+          message?: string | null
+          repository_id?: string | null
+          sha: string
+          timestamp?: string | null
+        }
+        Update: {
+          additions?: number | null
+          author_email?: string | null
+          author_name?: string | null
+          created_at?: string
+          deletions?: number | null
+          id?: string
+          message?: string | null
+          repository_id?: string | null
+          sha?: string
+          timestamp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "github_commits_repository_id_fkey"
+            columns: ["repository_id"]
+            isOneToOne: false
+            referencedRelation: "github_repositories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      github_repositories: {
+        Row: {
+          archived: boolean | null
+          clone_url: string
+          created_at: string
+          default_branch: string | null
+          description: string | null
+          developer_id: string | null
+          disabled: boolean | null
+          forks_count: number | null
+          full_name: string
+          github_repo_id: number
+          html_url: string
+          id: string
+          is_fork: boolean | null
+          is_private: boolean | null
+          language: string | null
+          name: string
+          open_issues_count: number | null
+          pushed_at: string | null
+          size: number | null
+          stars_count: number | null
+          updated_at: string
+        }
+        Insert: {
+          archived?: boolean | null
+          clone_url: string
+          created_at?: string
+          default_branch?: string | null
+          description?: string | null
+          developer_id?: string | null
+          disabled?: boolean | null
+          forks_count?: number | null
+          full_name: string
+          github_repo_id: number
+          html_url: string
+          id?: string
+          is_fork?: boolean | null
+          is_private?: boolean | null
+          language?: string | null
+          name: string
+          open_issues_count?: number | null
+          pushed_at?: string | null
+          size?: number | null
+          stars_count?: number | null
+          updated_at?: string
+        }
+        Update: {
+          archived?: boolean | null
+          clone_url?: string
+          created_at?: string
+          default_branch?: string | null
+          description?: string | null
+          developer_id?: string | null
+          disabled?: boolean | null
+          forks_count?: number | null
+          full_name?: string
+          github_repo_id?: number
+          html_url?: string
+          id?: string
+          is_fork?: boolean | null
+          is_private?: boolean | null
+          language?: string | null
+          name?: string
+          open_issues_count?: number | null
+          pushed_at?: string | null
+          size?: number | null
+          stars_count?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "github_repositories_developer_id_fkey"
+            columns: ["developer_id"]
+            isOneToOne: false
+            referencedRelation: "developers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       grants: {
         Row: {
           amount: number
@@ -179,6 +359,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "grants_developer_id_fkey"
+            columns: ["developer_id"]
+            isOneToOne: false
+            referencedRelation: "developers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallet_connections: {
+        Row: {
+          address: string
+          connected_at: string
+          developer_id: string | null
+          id: string
+          is_active: boolean | null
+          last_used_at: string | null
+          metadata: Json | null
+          wallet_type: string
+        }
+        Insert: {
+          address: string
+          connected_at?: string
+          developer_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          metadata?: Json | null
+          wallet_type?: string
+        }
+        Update: {
+          address?: string
+          connected_at?: string
+          developer_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          metadata?: Json | null
+          wallet_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_connections_developer_id_fkey"
             columns: ["developer_id"]
             isOneToOne: false
             referencedRelation: "developers"
