@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,24 +8,15 @@ import { WalletConnection } from '@/components/WalletConnection';
 import { ChatInbox } from '@/components/ChatInbox';
 import { StartupCard } from '@/components/StartupCard';
 import { useStartupListings } from '@/hooks/useStartupListings';
-import { useCDPWallet } from '@/hooks/useCDPWallet';
 import { Github } from 'lucide-react';
 
 const Dashboard = () => {
-  const { startups, loading, fetchUserStartups } = useStartupListings();
-  const { account } = useCDPWallet();
+  const { startups, loading } = useStartupListings();
   const [aiAnalysisStartupId, setAiAnalysisStartupId] = useState<string | null>(null);
 
   const toggleAIAnalysis = (startupId: string) => {
     setAiAnalysisStartupId(aiAnalysisStartupId === startupId ? null : startupId);
   };
-
-  // Fetch user's own startups when account is available
-  useEffect(() => {
-    if (account) {
-      fetchUserStartups();
-    }
-  }, [account, fetchUserStartups]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
@@ -52,14 +43,7 @@ const Dashboard = () => {
               </Button>
             </div>
 
-            {!account ? (
-              <Card className="text-center py-12">
-                <CardContent>
-                  <div className="text-lg text-gray-600 mb-4">Connect your wallet to view your startups</div>
-                  <p className="text-gray-500 mb-6">Please connect your wallet to manage your startup listings</p>
-                </CardContent>
-              </Card>
-            ) : loading ? (
+            {loading ? (
               <div className="text-center py-12">
                 <div className="text-lg text-gray-600">Loading your startups...</div>
               </div>
@@ -97,14 +81,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {!account ? (
-              <Card className="text-center py-12">
-                <CardContent>
-                  <div className="text-lg text-gray-600 mb-4">Connect your wallet to view messages</div>
-                  <p className="text-gray-500 mb-6">Please connect your wallet to see messages from funders</p>
-                </CardContent>
-              </Card>
-            ) : loading ? (
+            {loading ? (
               <div className="text-center py-12">
                 <div className="text-lg text-gray-600">Loading chat data...</div>
               </div>
