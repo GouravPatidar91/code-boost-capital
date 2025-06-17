@@ -8,7 +8,7 @@ import { AIAnalysisCard } from '@/components/AIAnalysisCard';
 import { useFundingData } from '@/hooks/useFundingData';
 import { useRealTimeChat } from '@/hooks/useRealTimeChat';
 import { useCDPWallet } from '@/hooks/useCDPWallet';
-import { Github, MessageSquare, TrendingUp, Calendar, Users, DollarSign, Brain } from 'lucide-react';
+import { Github, MessageSquare, TrendingUp, Calendar, Users, DollarSign, Brain, Code } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface StartupCardProps {
@@ -145,7 +145,7 @@ export const StartupCard = ({
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {/* Enhanced Action Buttons */}
           <div className="flex space-x-2 pt-4">
             <Button 
               variant="outline" 
@@ -162,7 +162,7 @@ export const StartupCard = ({
               )}
             </Button>
             
-            {/* Show AI Analysis button for non-founders (funders) */}
+            {/* Enhanced AI Analysis button for funders */}
             {!(isFounder || isFounderView) && startup.github_repositories?.html_url && (
               <Button 
                 variant="outline" 
@@ -171,7 +171,18 @@ export const StartupCard = ({
                 onClick={onToggleAIAnalysis}
               >
                 <Brain className="w-4 h-4 mr-1" />
-                AI Analysis
+                {showAIAnalysis ? 'Hide Analysis' : 'AI Code Review'}
+              </Button>
+            )}
+
+            {/* GitHub Repository Access for Funders */}
+            {!(isFounder || isFounderView) && startup.github_repositories?.html_url && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.open(startup.github_repositories?.html_url, '_blank')}
+              >
+                <Code className="w-4 h-4" />
               </Button>
             )}
             
@@ -220,7 +231,7 @@ export const StartupCard = ({
         </CardContent>
       </Card>
 
-      {/* AI Analysis Card - Only show for non-founders when requested */}
+      {/* Enhanced AI Analysis Card - Only show for funders when requested */}
       {showAIAnalysis && !(isFounder || isFounderView) && startup.github_repositories?.html_url && (
         <AIAnalysisCard
           startupId={startup.id}

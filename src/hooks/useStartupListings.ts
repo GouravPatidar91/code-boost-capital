@@ -1,6 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useCDPWallet } from '@/hooks/useCDPWallet';
 
 interface StartupListing {
   id: string;
@@ -36,6 +38,7 @@ export const useStartupListings = () => {
   const [startups, setStartups] = useState<StartupListing[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { account } = useCDPWallet();
 
   const fetchVerifiedStartups = async () => {
     setLoading(true);
@@ -67,6 +70,45 @@ export const useStartupListings = () => {
       toast({
         title: "Error",
         description: "Failed to fetch startup listings.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUserStartups = async () => {
+    if (!account) return;
+    
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('startup_listings')
+        .select(`
+          *,
+          github_repositories (
+            name,
+            full_name,
+            description,
+            language,
+            stars_count,
+            forks_count,
+            html_url
+          ),
+          developers (
+            github_username
+          )
+        `)
+        .eq('developers.github_username', account)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setStartups(data || []);
+    } catch (error) {
+      console.error('Error fetching user startups:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch your startup listings.",
         variant: "destructive"
       });
     } finally {
@@ -258,6 +300,7 @@ export const useStartupListings = () => {
     startups,
     loading,
     fetchVerifiedStartups,
+    fetchUserStartups,
     submitStartupListing
   };
 };
