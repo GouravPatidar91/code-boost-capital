@@ -145,6 +145,44 @@ export type Database = {
         }
         Relationships: []
       }
+      funding_interests: {
+        Row: {
+          created_at: string
+          funder_wallet_address: string
+          id: string
+          interest_amount: number
+          message: string | null
+          startup_listing_id: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string
+          funder_wallet_address: string
+          id?: string
+          interest_amount: number
+          message?: string | null
+          startup_listing_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string
+          funder_wallet_address?: string
+          id?: string
+          interest_amount?: number
+          message?: string | null
+          startup_listing_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funding_interests_startup_listing_id_fkey"
+            columns: ["startup_listing_id"]
+            isOneToOne: false
+            referencedRelation: "startup_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       funding_transactions: {
         Row: {
           amount_crypto: number
@@ -362,6 +400,90 @@ export type Database = {
             columns: ["developer_id"]
             isOneToOne: false
             referencedRelation: "developers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      startup_listings: {
+        Row: {
+          contact_email: string
+          created_at: string
+          description: string
+          developer_id: string | null
+          funding_goal: number
+          funding_type: string | null
+          github_repo_id: string | null
+          id: string
+          project_stage: string | null
+          startup_name: string
+          status: string | null
+          tags: string[] | null
+          team_size: number | null
+          timeline_months: number | null
+          updated_at: string
+          use_of_funds: string | null
+          verification_notes: string | null
+          verified: boolean | null
+          verified_at: string | null
+          website_url: string | null
+        }
+        Insert: {
+          contact_email: string
+          created_at?: string
+          description: string
+          developer_id?: string | null
+          funding_goal: number
+          funding_type?: string | null
+          github_repo_id?: string | null
+          id?: string
+          project_stage?: string | null
+          startup_name: string
+          status?: string | null
+          tags?: string[] | null
+          team_size?: number | null
+          timeline_months?: number | null
+          updated_at?: string
+          use_of_funds?: string | null
+          verification_notes?: string | null
+          verified?: boolean | null
+          verified_at?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          contact_email?: string
+          created_at?: string
+          description?: string
+          developer_id?: string | null
+          funding_goal?: number
+          funding_type?: string | null
+          github_repo_id?: string | null
+          id?: string
+          project_stage?: string | null
+          startup_name?: string
+          status?: string | null
+          tags?: string[] | null
+          team_size?: number | null
+          timeline_months?: number | null
+          updated_at?: string
+          use_of_funds?: string | null
+          verification_notes?: string | null
+          verified?: boolean | null
+          verified_at?: string | null
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "startup_listings_developer_id_fkey"
+            columns: ["developer_id"]
+            isOneToOne: false
+            referencedRelation: "developers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "startup_listings_github_repo_id_fkey"
+            columns: ["github_repo_id"]
+            isOneToOne: false
+            referencedRelation: "github_repositories"
             referencedColumns: ["id"]
           },
         ]

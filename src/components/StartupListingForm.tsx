@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useGitHubAuth } from '@/hooks/useGitHubAuth';
-import { useToast } from '@/hooks/use-toast';
+import { useStartupListings } from '@/hooks/useStartupListings';
 import { Github, ArrowLeft, DollarSign, Users, Calendar, Target } from 'lucide-react';
 
 interface Repository {
@@ -22,6 +21,11 @@ interface Repository {
   forks_count: number;
   updated_at: string;
   private: boolean;
+  fork: boolean;
+  clone_url: string;
+  open_issues_count: number;
+  size: number;
+  pushed_at: string;
 }
 
 interface StartupListingFormProps {
@@ -29,10 +33,11 @@ interface StartupListingFormProps {
 }
 
 export const StartupListingForm = ({ onBack }: StartupListingFormProps) => {
-  const { isConnected, fetchUserRepos } = useGitHubAuth();
-  const { toast } = useToast();
+  const { isConnected, fetchUserRepos, githubUser } = useGitHubAuth();
+  const { submitStartupListing } = useStartupListings();
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
   const [formData, setFormData] = useState({
     startupName: '',
@@ -61,11 +66,6 @@ export const StartupListingForm = ({ onBack }: StartupListingFormProps) => {
       setRepositories(repos);
     } catch (error) {
       console.error('Error loading repositories:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load repositories. Please try again.",
-        variant: "destructive"
-      });
     } finally {
       setLoading(false);
     }
@@ -89,43 +89,19 @@ export const StartupListingForm = ({ onBack }: StartupListingFormProps) => {
 
   const handleSubmit = async () => {
     if (!selectedRepo) {
-      toast({
-        title: "Repository Required",
-        description: "Please select a repository for your startup listing.",
-        variant: "destructive"
-      });
       return;
     }
 
-    if (!formData.startupName || !formData.description || !formData.fundingGoal) {
-      toast({
-        title: "Missing Required Fields",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      });
+    if (!formData.startupName || !formData.description || !formData.fundingGoal || !formData.contactEmail) {
       return;
     }
 
-    try {
-      // Here you would submit the startup listing to your backend
-      console.log('Submitting startup listing:', {
-        repository: selectedRepo,
-        ...formData
-      });
-      
-      toast({
-        title: "Startup Listed Successfully!",
-        description: "Your startup has been submitted for review and will be visible to funders soon.",
-      });
-      
+    setSubmitting(true);
+    const success = await submitStartupListing(formData, selectedRepo, githubUser);
+    setSubmitting(false);
+    
+    if (success) {
       onBack();
-    } catch (error) {
-      console.error('Error submitting startup:', error);
-      toast({
-        title: "Submission Failed",
-        description: "Failed to submit your startup listing. Please try again.",
-        variant: "destructive"
-      });
     }
   };
 
@@ -394,8 +370,12 @@ export const StartupListingForm = ({ onBack }: StartupListingFormProps) => {
               </Alert>
 
               <div className="flex space-x-3 pt-4">
-                <Button onClick={handleSubmit} className="flex-1">
-                  Submit Startup Listing
+                <Button 
+                  onClick={handleSubmit} 
+                  className="flex-1"
+                  disabled={submitting || !formData.startupName || !formData.description || !formData.fundingGoal || !formData.contactEmail}
+                >
+                  {submitting ? 'Submitting...' : 'Submit Startup Listing'}
                 </Button>
                 <Button variant="outline" onClick={() => setSelectedRepo(null)}>
                   Cancel
