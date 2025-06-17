@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -77,6 +78,29 @@ export const useStartupListings = () => {
   const fetchUserStartups = async (githubUsername: string) => {
     setLoading(true);
     try {
+      console.log('Fetching startups for user:', githubUsername);
+      
+      // First get the developer ID from the developers table
+      const { data: developerData, error: developerError } = await supabase
+        .from('developers')
+        .select('id')
+        .eq('github_username', githubUsername)
+        .maybeSingle();
+
+      if (developerError) {
+        console.error('Error fetching developer:', developerError);
+        throw developerError;
+      }
+
+      if (!developerData) {
+        console.log('No developer found for username:', githubUsername);
+        setStartups([]);
+        return;
+      }
+
+      console.log('Found developer ID:', developerData.id);
+
+      // Now fetch startups for this developer
       const { data, error } = await supabase
         .from('startup_listings')
         .select(`
@@ -94,10 +118,12 @@ export const useStartupListings = () => {
             github_username
           )
         `)
-        .eq('developers.github_username', githubUsername)
+        .eq('developer_id', developerData.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      
+      console.log('Fetched user startups:', data);
       setStartups(data || []);
     } catch (error) {
       console.error('Error fetching user startups:', error);
