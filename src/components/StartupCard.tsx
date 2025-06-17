@@ -7,7 +7,8 @@ import { Progress } from "@/components/ui/progress";
 import { AIAnalysisCard } from '@/components/AIAnalysisCard';
 import { useFundingData } from '@/hooks/useFundingData';
 import { useRealTimeChat } from '@/hooks/useRealTimeChat';
-import { Github, MessageSquare, TrendingUp, Calendar, Users, DollarSign } from 'lucide-react';
+import { useCDPWallet } from '@/hooks/useCDPWallet';
+import { Github, MessageSquare, TrendingUp, Calendar, Users, DollarSign, Brain } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface StartupCardProps {
@@ -29,15 +30,24 @@ interface StartupCardProps {
       github_username: string;
     } | null;
   };
+  showAIAnalysis?: boolean;
+  onToggleAIAnalysis?: () => void;
 }
 
-export const StartupCard = ({ startup }: StartupCardProps) => {
+export const StartupCard = ({ startup, showAIAnalysis = false, onToggleAIAnalysis }: StartupCardProps) => {
   const { fundingData, loading: fundingLoading } = useFundingData(startup.id);
   const { messages } = useRealTimeChat(startup.id);
+  const { account } = useCDPWallet();
   const navigate = useNavigate();
 
-  // Calculate unread messages from funders
-  const unreadMessages = messages.filter(msg => msg.sender_type === 'funder').length;
+  // Determine if current user is the founder
+  const isFounder = startup?.developers?.github_username && account ? 
+    startup.developers.github_username === account : false;
+
+  // Calculate unread messages based on user type
+  const unreadMessages = isFounder 
+    ? messages.filter(msg => msg.sender_type === 'funder').length
+    : messages.filter(msg => msg.sender_type === 'founder').length;
   
   // Use real funding data or fallback to defaults
   const totalRaised = fundingData?.total_raised || 0;
@@ -57,12 +67,19 @@ export const StartupCard = ({ startup }: StartupCardProps) => {
                 {startup.github_repositories?.full_name}
               </CardDescription>
             </div>
-            <Badge 
-              variant={startup.verified ? "default" : "secondary"}
-              className={startup.verified ? "bg-green-100 text-green-800" : ""}
-            >
-              {startup.verified ? "Verified" : "Pending"}
-            </Badge>
+            <div className="flex items-center space-x-2">
+              <Badge 
+                variant={startup.verified ? "default" : "secondary"}
+                className={startup.verified ? "bg-green-100 text-green-800" : ""}
+              >
+                {startup.verified ? "Verified" : "Pending"}
+              </Badge>
+              {isFounder && (
+                <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                  Your Startup
+                </Badge>
+              )}
+            </div>
           </div>
         </CardHeader>
         
@@ -131,17 +148,34 @@ export const StartupCard = ({ startup }: StartupCardProps) => {
               onClick={() => navigate(`/chat/${startup.id}`)}
             >
               <MessageSquare className="w-4 h-4 mr-1" />
-              Chat Inbox
+              {isFounder ? 'Chat Inbox' : 'Chat with Founder'}
               {unreadMessages > 0 && (
                 <span className="ml-1 bg-red-500 text-white text-xs rounded-full px-1">
                   {unreadMessages}
                 </span>
               )}
             </Button>
-            <Button variant="outline" size="sm" className="flex-1">
-              <TrendingUp className="w-4 h-4 mr-1" />
-              Analytics
-            </Button>
+            
+            {/* Show AI Analysis button for non-founders (funders) */}
+            {!isFounder && startup.github_repositories?.html_url && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1 bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100 border-purple-200"
+                onClick={onToggleAIAnalysis}
+              >
+                <Brain className="w-4 h-4 mr-1" />
+                AI Analysis
+              </Button>
+            )}
+            
+            {isFounder && (
+              <Button variant="outline" size="sm" className="flex-1">
+                <TrendingUp className="w-4 h-4 mr-1" />
+                Analytics
+              </Button>
+            )}
+            
             <Button variant="outline" size="sm">
               <Calendar className="w-4 h-4" />
             </Button>
@@ -161,7 +195,10 @@ export const StartupCard = ({ startup }: StartupCardProps) => {
               {unreadMessages > 0 && (
                 <div className="flex items-center space-x-2 text-xs text-gray-600">
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span>{unreadMessages} new message{unreadMessages > 1 ? 's' : ''} from funders</span>
+                  <span>
+                    {unreadMessages} new message{unreadMessages > 1 ? 's' : ''} 
+                    {isFounder ? ' from funders' : ' from founder'}
+                  </span>
                   <span className="text-gray-400">Now</span>
                 </div>
               )}
@@ -177,8 +214,8 @@ export const StartupCard = ({ startup }: StartupCardProps) => {
         </CardContent>
       </Card>
 
-      {/* AI Analysis Card */}
-      {startup.github_repositories?.html_url && (
+      {/* AI Analysis Card - Only show for non-founders when requested */}
+      {showAIAnalysis && !isFounder && startup.github_repositories?.html_url && (
         <AIAnalysisCard
           startupId={startup.id}
           githubRepoUrl={startup.github_repositories.html_url}

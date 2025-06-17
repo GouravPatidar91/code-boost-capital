@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,10 +12,11 @@ import { Github } from 'lucide-react';
 
 const Dashboard = () => {
   const { startups, loading } = useStartupListings();
-  const [selectedStartupForChat, setSelectedStartupForChat] = useState<string | null>(null);
+  const [aiAnalysisStartupId, setAiAnalysisStartupId] = useState<string | null>(null);
 
-  // For demo purposes, select the first startup for chat inbox
-  const chatStartup = startups?.[0];
+  const toggleAIAnalysis = (startupId: string) => {
+    setAiAnalysisStartupId(aiAnalysisStartupId === startupId ? null : startupId);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
@@ -56,7 +58,12 @@ const Dashboard = () => {
             ) : (
               <div className="grid grid-cols-1 gap-6">
                 {startups.map((startup) => (
-                  <StartupCard key={startup.id} startup={startup} />
+                  <StartupCard 
+                    key={startup.id} 
+                    startup={startup}
+                    showAIAnalysis={aiAnalysisStartupId === startup.id}
+                    onToggleAIAnalysis={() => toggleAIAnalysis(startup.id)}
+                  />
                 ))}
               </div>
             )}
