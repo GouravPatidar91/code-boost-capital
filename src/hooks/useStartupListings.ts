@@ -74,79 +74,6 @@ export const useStartupListings = () => {
     }
   };
 
-  const fetchUserStartups = async (userEmail: string) => {
-    if (!userEmail) {
-      console.error('No user email provided');
-      toast({
-        title: "Error",
-        description: "User email is required to fetch startups.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      console.log('Fetching startups for authenticated user:', userEmail);
-      
-      // Verify user is authenticated before making the request
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        throw new Error('User not authenticated');
-      }
-
-      if (user.email !== userEmail) {
-        throw new Error('Email mismatch - security violation');
-      }
-
-      // Fetch startups only for the authenticated user's email
-      const { data, error } = await supabase
-        .from('startup_listings')
-        .select(`
-          *,
-          github_repositories (
-            name,
-            full_name,
-            description,
-            language,
-            stars_count,
-            forks_count,
-            html_url
-          ),
-          developers (
-            github_username
-          )
-        `)
-        .eq('contact_email', userEmail)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
-      
-      console.log(`Found ${data?.length || 0} startups for user:`, userEmail);
-      setStartups(data || []);
-      
-      if (!data || data.length === 0) {
-        console.log('No startups found for authenticated user:', userEmail);
-      }
-    } catch (error) {
-      console.error('Error fetching user startups:', error);
-      toast({
-        title: "Error",
-        description: error.message === 'User not authenticated' 
-          ? "Please log in to view your startups." 
-          : "Failed to fetch your startup listings. Please try again.",
-        variant: "destructive"
-      });
-      setStartups([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const submitStartupListing = async (
     startupData: any,
     selectedRepo: any,
@@ -331,7 +258,6 @@ export const useStartupListings = () => {
     startups,
     loading,
     fetchVerifiedStartups,
-    fetchUserStartups,
     submitStartupListing
   };
 };
