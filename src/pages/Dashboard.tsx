@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,15 +8,24 @@ import { WalletConnection } from '@/components/WalletConnection';
 import { ChatInbox } from '@/components/ChatInbox';
 import { StartupCard } from '@/components/StartupCard';
 import { useStartupListings } from '@/hooks/useStartupListings';
+import { useGitHubAuth } from '@/hooks/useGitHubAuth';
 import { Github } from 'lucide-react';
 
 const Dashboard = () => {
-  const { startups, loading } = useStartupListings();
+  const { startups, loading, fetchUserStartups } = useStartupListings();
+  const { githubUser } = useGitHubAuth();
   const [aiAnalysisStartupId, setAiAnalysisStartupId] = useState<string | null>(null);
 
   const toggleAIAnalysis = (startupId: string) => {
     setAiAnalysisStartupId(aiAnalysisStartupId === startupId ? null : startupId);
   };
+
+  // Fetch user-specific startups when GitHub user is available
+  useEffect(() => {
+    if (githubUser?.login) {
+      fetchUserStartups(githubUser.login);
+    }
+  }, [githubUser, fetchUserStartups]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
@@ -43,7 +52,18 @@ const Dashboard = () => {
               </Button>
             </div>
 
-            {loading ? (
+            {!githubUser ? (
+              <Card className="text-center py-12">
+                <CardContent>
+                  <div className="text-lg text-gray-600 mb-4">GitHub Integration Required</div>
+                  <p className="text-gray-500 mb-6">Connect your GitHub account to see your startups</p>
+                  <Button className="bg-gradient-to-r from-purple-600 to-blue-600">
+                    <Github className="w-4 h-4 mr-2" />
+                    Connect GitHub
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : loading ? (
               <div className="text-center py-12">
                 <div className="text-lg text-gray-600">Loading your startups...</div>
               </div>
@@ -81,7 +101,18 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {loading ? (
+            {!githubUser ? (
+              <Card className="text-center py-12">
+                <CardContent>
+                  <div className="text-lg text-gray-600 mb-4">GitHub Integration Required</div>
+                  <p className="text-gray-500 mb-6">Connect your GitHub account to see your messages</p>
+                  <Button className="bg-gradient-to-r from-purple-600 to-blue-600">
+                    <Github className="w-4 h-4 mr-2" />
+                    Connect GitHub
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : loading ? (
               <div className="text-center py-12">
                 <div className="text-lg text-gray-600">Loading chat data...</div>
               </div>

@@ -74,6 +74,43 @@ export const useStartupListings = () => {
     }
   };
 
+  const fetchUserStartups = async (githubUsername: string) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('startup_listings')
+        .select(`
+          *,
+          github_repositories (
+            name,
+            full_name,
+            description,
+            language,
+            stars_count,
+            forks_count,
+            html_url
+          ),
+          developers (
+            github_username
+          )
+        `)
+        .eq('developers.github_username', githubUsername)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setStartups(data || []);
+    } catch (error) {
+      console.error('Error fetching user startups:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch your startup listings.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const submitStartupListing = async (
     startupData: any,
     selectedRepo: any,
@@ -258,6 +295,7 @@ export const useStartupListings = () => {
     startups,
     loading,
     fetchVerifiedStartups,
+    fetchUserStartups,
     submitStartupListing
   };
 };
