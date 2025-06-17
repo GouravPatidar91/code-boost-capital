@@ -8,24 +8,61 @@ import { WalletConnection } from '@/components/WalletConnection';
 import { ChatInbox } from '@/components/ChatInbox';
 import { StartupCard } from '@/components/StartupCard';
 import { useStartupListings } from '@/hooks/useStartupListings';
-import { useGitHubAuth } from '@/hooks/useGitHubAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Github } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
   const { startups, loading, fetchUserStartups } = useStartupListings();
-  const { githubUser } = useGitHubAuth();
+  const [user, setUser] = useState(null);
   const [aiAnalysisStartupId, setAiAnalysisStartupId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const toggleAIAnalysis = (startupId: string) => {
     setAiAnalysisStartupId(aiAnalysisStartupId === startupId ? null : startupId);
   };
 
-  // Fetch user-specific startups when GitHub user is available
+  // Check authentication and fetch user startups
   useEffect(() => {
-    if (githubUser?.login) {
-      fetchUserStartups(githubUser.login);
-    }
-  }, [githubUser, fetchUserStartups]);
+    const getUser = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('Error getting session:', error);
+        toast({
+          title: "Authentication Error",
+          description: "Failed to get user session.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (session?.user) {
+        console.log('User authenticated:', session.user.email);
+        setUser(session.user);
+        fetchUserStartups(session.user.email);
+      } else {
+        console.log('No authenticated user');
+        setUser(null);
+      }
+    };
+
+    getUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        console.log('Auth state changed - user logged in:', session.user.email);
+        setUser(session.user);
+        fetchUserStartups(session.user.email);
+      } else {
+        console.log('Auth state changed - user logged out');
+        setUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [fetchUserStartups, toast]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
@@ -52,14 +89,13 @@ const Dashboard = () => {
               </Button>
             </div>
 
-            {!githubUser ? (
+            {!user ? (
               <Card className="text-center py-12">
                 <CardContent>
-                  <div className="text-lg text-gray-600 mb-4">GitHub Integration Required</div>
-                  <p className="text-gray-500 mb-6">Connect your GitHub account to see your startups</p>
+                  <div className="text-lg text-gray-600 mb-4">Authentication Required</div>
+                  <p className="text-gray-500 mb-6">Please log in to see your startups</p>
                   <Button className="bg-gradient-to-r from-purple-600 to-blue-600">
-                    <Github className="w-4 h-4 mr-2" />
-                    Connect GitHub
+                    Log In
                   </Button>
                 </CardContent>
               </Card>
@@ -101,14 +137,13 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {!githubUser ? (
+            {!user ? (
               <Card className="text-center py-12">
                 <CardContent>
-                  <div className="text-lg text-gray-600 mb-4">GitHub Integration Required</div>
-                  <p className="text-gray-500 mb-6">Connect your GitHub account to see your messages</p>
+                  <div className="text-lg text-gray-600 mb-4">Authentication Required</div>
+                  <p className="text-gray-500 mb-6">Please log in to see your messages</p>
                   <Button className="bg-gradient-to-r from-purple-600 to-blue-600">
-                    <Github className="w-4 h-4 mr-2" />
-                    Connect GitHub
+                    Log In
                   </Button>
                 </CardContent>
               </Card>
