@@ -1,330 +1,325 @@
-
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Github, Wallet, Shield, TrendingUp, Users, MessageSquare, Star, GitCommit, DollarSign, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { GitHubIntegration } from '@/components/GitHubIntegration';
 import { StartupListingForm } from '@/components/StartupListingForm';
-import { WalletConnection } from '@/components/WalletConnection';
 import { useStartupListings } from '@/hooks/useStartupListings';
-import { User, Session } from '@supabase/supabase-js';
-import { Building2, TrendingUp, Users, Wallet, Github, Star, GitBranch } from 'lucide-react';
 
 const Index = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [userRole, setUserRole] = useState<'founder' | 'funder'>('funder');
   const [showListingForm, setShowListingForm] = useState(false);
-  const [activeSection, setActiveSection] = useState<'funder' | 'founder'>('founder');
   const { startups, loading } = useStartupListings();
 
-  useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-      }
-    );
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      {/* Navigation */}
-      <nav className="backdrop-blur-md bg-white/10 border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <Building2 className="w-8 h-8 text-blue-400" />
-              <h1 className="text-xl font-bold text-white">CodeChain</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              {user ? (
-                <>
-                  <span className="text-sm text-gray-300">Welcome, {user.email}</span>
-                  <Button onClick={handleLogout} variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10">
-                    Sign Out
-                  </Button>
-                </>
-              ) : (
-                <Link to="/auth">
-                  <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10">
-                    Sign In
-                  </Button>
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-          <div className="text-center">
-            <h1 className="text-5xl font-extrabold text-white sm:text-6xl md:text-7xl">
-              Fund the Future of
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400"> Open Source</span>
-            </h1>
-            <p className="mt-6 max-w-3xl mx-auto text-xl text-gray-300">
-              Connect developers with investors. Build the next generation of developer tools and platforms.
-            </p>
-          </div>
+  if (showListingForm) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
+        <div className="container mx-auto px-4 py-8">
+          <StartupListingForm onBack={() => setShowListingForm(false)} />
         </div>
       </div>
+    );
+  }
 
-      {/* Main Section Selector */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex justify-center mb-12">
-          <div className="grid grid-cols-2 gap-8 w-full max-w-2xl">
-            <Card 
-              className={`cursor-pointer transition-all duration-300 ${
-                activeSection === 'funder' 
-                  ? 'bg-gradient-to-r from-green-600 to-emerald-600 border-green-400 shadow-lg shadow-green-500/25' 
-                  : 'bg-gray-800/50 border-gray-600 hover:bg-gray-700/50'
-              }`}
-              onClick={() => setActiveSection('funder')}
-            >
-              <CardContent className="p-8 text-center">
-                <TrendingUp className="w-12 h-12 mx-auto mb-4 text-white" />
-                <h2 className="text-2xl font-bold text-white">Funder</h2>
-                <p className="text-gray-200 mt-2">Invest in promising open source projects</p>
-              </CardContent>
-            </Card>
-
-            <Card 
-              className={`cursor-pointer transition-all duration-300 ${
-                activeSection === 'founder' 
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 border-blue-400 shadow-lg shadow-blue-500/25' 
-                  : 'bg-gray-800/50 border-gray-600 hover:bg-gray-700/50'
-              }`}
-              onClick={() => setActiveSection('founder')}
-            >
-              <CardContent className="p-8 text-center">
-                <Users className="w-12 h-12 mx-auto mb-4 text-white" />
-                <h2 className="text-2xl font-bold text-white">Founder</h2>
-                <p className="text-gray-200 mt-2">Get funding for your innovative ideas</p>
-              </CardContent>
-            </Card>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
+      {/* Header */}
+      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-white" />
+              </div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                FundChain
+              </h1>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                <Button
+                  variant={userRole === 'funder' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setUserRole('funder')}
+                  className="text-xs"
+                >
+                  <Users className="w-3 h-3 mr-1" />
+                  Funder
+                </Button>
+                <Button
+                  variant={userRole === 'founder' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setUserRole('founder')}
+                  className="text-xs"
+                >
+                  <Github className="w-3 h-3 mr-1" />
+                  Founder
+                </Button>
+              </div>
+              
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/dashboard">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Dashboard
+                </Link>
+              </Button>
+              
+              <Button className="bg-gradient-to-r from-purple-600 to-blue-600">
+                <Wallet className="w-4 h-4 mr-2" />
+                Connect Wallet
+              </Button>
+            </div>
           </div>
         </div>
+      </header>
 
-        {/* Dynamic Content Based on Selection */}
-        {activeSection === 'founder' && (
-          <div className="space-y-8">
-            {user ? (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <Card className="bg-gray-800/50 border-gray-600">
-                    <CardHeader>
-                      <CardTitle className="flex items-center space-x-2 text-white">
-                        <Github className="w-5 h-5" />
-                        <span>GitHub Integration</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <GitHubIntegration />
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-gray-800/50 border-gray-600">
-                    <CardHeader>
-                      <CardTitle className="flex items-center space-x-2 text-white">
-                        <Wallet className="w-5 h-5" />
-                        <span>Wallet Connection</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <WalletConnection />
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-gray-800/50 border-gray-600">
-                    <CardHeader>
-                      <CardTitle className="text-white">Submit Startup</CardTitle>
-                      <CardDescription className="text-gray-300">
-                        Create a listing for your project
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Button 
-                        onClick={() => setShowListingForm(true)}
-                        className="w-full bg-blue-600 hover:bg-blue-700"
-                      >
-                        Submit Your Startup
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {showListingForm && (
-                  <Card className="bg-gray-800/50 border-gray-600">
-                    <CardHeader>
-                      <CardTitle className="text-white">Submit Your Startup</CardTitle>
-                      <CardDescription className="text-gray-300">
-                        Create a listing for your startup project
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <StartupListingForm onBack={() => setShowListingForm(false)} />
-                    </CardContent>
-                  </Card>
-                )}
-              </>
-            ) : (
-              <div className="text-center py-16">
-                <h3 className="text-2xl font-bold text-white mb-4">Ready to Launch Your Startup?</h3>
-                <p className="text-gray-300 mb-8">Connect your GitHub and wallet to get started</p>
-                <Link to="/auth">
-                  <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
-                    Get Started as Founder
-                  </Button>
-                </Link>
+      {/* Hero Section */}
+      <section className="py-20">
+        <div className="container mx-auto px-4 text-center">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-5xl font-bold mb-6 bg-gradient-to-r from-purple-700 via-blue-700 to-indigo-700 bg-clip-text text-transparent">
+              Fund the Future of Web3
+            </h2>
+            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+              Discover, analyze, and invest in promising startups through AI-verified GitHub projects. 
+              Secure funding with CDP Wallet integration and milestone-based payouts.
+            </p>
+            
+            <div className="flex flex-wrap justify-center items-center gap-8 mb-12">
+              <div className="flex items-center space-x-2 text-gray-700">
+                <Shield className="w-5 h-5 text-green-600" />
+                <span className="font-medium">AI Trust Score</span>
               </div>
-            )}
-          </div>
-        )}
-
-        {activeSection === 'funder' && (
-          <div className="text-center py-16">
-            <h3 className="text-2xl font-bold text-white mb-4">Discover Investment Opportunities</h3>
-            <p className="text-gray-300 mb-8">Browse and fund innovative open source projects</p>
-            {!user ? (
-              <Link to="/auth">
-                <Button size="lg" className="bg-green-600 hover:bg-green-700">
-                  Get Started as Funder
-                </Button>
-              </Link>
-            ) : (
-              <p className="text-gray-300">Explore the featured startups below to start investing</p>
-            )}
-          </div>
-        )}
-
-        {/* Featured Startups Section */}
-        <div className="mt-16">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-bold text-white">Featured Startups</h2>
-            <Badge variant="secondary" className="bg-purple-600/20 text-purple-300 border-purple-500/30">
-              {startups?.length || 0} Projects
-            </Badge>
-          </div>
-          
-          {loading && (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
-              <p className="text-gray-300">Loading startup listings...</p>
+              <div className="flex items-center space-x-2 text-gray-700">
+                <Github className="w-5 h-5 text-purple-600" />
+                <span className="font-medium">GitHub Integration</span>
+              </div>
+              <div className="flex items-center space-x-2 text-gray-700">
+                <Wallet className="w-5 h-5 text-blue-600" />
+                <span className="font-medium">CDP Wallet</span>
+              </div>
             </div>
-          )}
 
-          {!loading && (!startups || startups.length === 0) && (
-            <Card className="bg-gray-800/30 border-gray-600">
-              <CardContent className="text-center py-12">
-                <Building2 className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-                <p className="text-gray-400 text-lg">No startup listings available yet.</p>
-                <p className="text-gray-500 mt-2">Be the first to submit your project!</p>
-              </CardContent>
-            </Card>
-          )}
+            {userRole === 'founder' ? (
+              <Button 
+                size="lg" 
+                className="bg-gradient-to-r from-purple-600 to-blue-600 text-lg px-8 py-3"
+                onClick={() => setShowListingForm(true)}
+              >
+                <Github className="w-5 h-5 mr-2" />
+                List Your Startup
+              </Button>
+            ) : (
+              <Button size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 text-lg px-8 py-3">
+                <TrendingUp className="w-5 h-5 mr-2" />
+                Explore Startups
+              </Button>
+            )}
+          </div>
+        </div>
+      </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {startups && startups.map((startup) => (
-              <Card key={startup.id} className="bg-gray-800/50 border-gray-600 hover:bg-gray-700/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg text-white">{startup.startup_name}</CardTitle>
-                    {startup.verified && (
-                      <Badge className="bg-green-600/20 text-green-300 border-green-500/30">
+      {/* Main Content */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center mb-8">
+            <h3 className="text-3xl font-bold text-gray-800">
+              {userRole === 'founder' ? 'Your Projects' : 'Trending Startups'}
+            </h3>
+            <div className="flex space-x-2">
+              <Button variant="outline" size="sm">All</Button>
+              <Button variant="outline" size="sm">DeFi</Button>
+              <Button variant="outline" size="sm">AI</Button>
+              <Button variant="outline" size="sm">Gaming</Button>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="text-lg text-gray-600">Loading startups...</div>
+            </div>
+          ) : startups.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-lg text-gray-600">No verified startups found.</div>
+              {userRole === 'founder' && (
+                <Button 
+                  onClick={() => setShowListingForm(true)}
+                  className="mt-4"
+                >
+                  Be the first to list your startup
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {startups.map((startup) => (
+                <Card key={startup.id} className="hover:shadow-lg transition-all duration-300 border-0 bg-gradient-to-br from-white to-gray-50">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Avatar>
+                          <AvatarImage src={`https://github.com/${startup.developers?.github_username}.png`} />
+                          <AvatarFallback>{startup.developers?.github_username?.slice(0, 2).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <CardTitle className="text-lg">{startup.startup_name}</CardTitle>
+                          <p className="text-sm text-gray-500">by {startup.developers?.github_username}</p>
+                        </div>
+                      </div>
+                      <Badge 
+                        variant="secondary" 
+                        className="bg-green-100 text-green-800"
+                      >
+                        <Shield className="w-3 h-3 mr-1" />
                         Verified
                       </Badge>
-                    )}
-                  </div>
-                  <CardDescription className="line-clamp-2 text-gray-300">
-                    {startup.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-gray-400">Funding Goal:</span>
-                      <span className="text-lg font-bold text-green-400">
-                        ${startup.funding_goal?.toLocaleString()}
-                      </span>
                     </div>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-4">
+                    <CardDescription className="text-sm leading-relaxed">
+                      {startup.description}
+                    </CardDescription>
                     
-                    {startup.project_stage && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-400">Stage:</span>
-                        <Badge variant="outline" className="border-blue-500/30 text-blue-300">
-                          {startup.project_stage}
-                        </Badge>
+                    <div className="flex items-center space-x-4 text-xs text-gray-500">
+                      <div className="flex items-center space-x-1">
+                        <Github className="w-3 h-3" />
+                        <span>{startup.github_repositories?.full_name}</span>
                       </div>
-                    )}
-                    
-                    {startup.team_size && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-400">Team Size:</span>
-                        <span className="text-sm font-medium text-white">{startup.team_size} members</span>
+                      <div className="flex items-center space-x-1">
+                        <Star className="w-3 h-3" />
+                        <span>{startup.github_repositories?.stars_count}</span>
                       </div>
-                    )}
+                    </div>
 
-                    {startup.github_repositories && (
-                      <div className="pt-3 border-t border-gray-600">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-400">{startup.github_repositories.name}</span>
-                          <div className="flex items-center space-x-3 text-gray-400">
-                            <div className="flex items-center space-x-1">
-                              <Star className="w-3 h-3" />
-                              <span>{startup.github_repositories.stars_count}</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <GitBranch className="w-3 h-3" />
-                              <span>{startup.github_repositories.forks_count}</span>
-                            </div>
-                          </div>
-                        </div>
-                        {startup.github_repositories.language && (
-                          <Badge variant="secondary" className="mt-2 bg-gray-700 text-gray-300">
-                            {startup.github_repositories.language}
-                          </Badge>
-                        )}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Funding Goal</span>
+                        <span className="font-medium">
+                          ${startup.funding_goal.toLocaleString()}
+                        </span>
                       </div>
-                    )}
-                    
+                      <Progress value={0} className="h-2" />
+                    </div>
+
+                    <div className="flex justify-between items-center text-sm text-gray-600">
+                      <span>{startup.project_stage || 'Not specified'}</span>
+                      <span>{new Date(startup.created_at).toLocaleDateString()}</span>
+                    </div>
+
                     {startup.tags && startup.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 pt-2">
-                        {startup.tags.slice(0, 3).map((tag, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs bg-purple-600/20 text-purple-300 border-purple-500/30">
+                      <div className="flex flex-wrap gap-1">
+                        {startup.tags.map((tag) => (
+                          <Badge key={tag} variant="outline" className="text-xs">
                             {tag}
                           </Badge>
                         ))}
                       </div>
                     )}
 
-                    <Button className="w-full mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                      View Details
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    <div className="flex space-x-2 pt-2">
+                      <Button className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600" size="sm">
+                        <DollarSign className="w-4 h-4 mr-1" />
+                        Fund
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <MessageSquare className="w-4 h-4 mr-1" />
+                        Chat
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Star className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-16 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h3 className="text-3xl font-bold mb-4">Platform Stats</h3>
+            <p className="text-purple-100">Building the future of decentralized funding</p>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <div>
+              <div className="text-4xl font-bold mb-2">$2.4M</div>
+              <div className="text-purple-100">Total Funded</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold mb-2">{startups.length}</div>
+              <div className="text-purple-100">Active Projects</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold mb-2">1,247</div>
+              <div className="text-purple-100">Total Backers</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold mb-2">94%</div>
+              <div className="text-purple-100">Success Rate</div>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-white" />
+                </div>
+                <h4 className="text-xl font-bold">FundChain</h4>
+              </div>
+              <p className="text-gray-400 text-sm">
+                The future of startup funding through blockchain and AI verification.
+              </p>
+            </div>
+            <div>
+              <h5 className="font-semibold mb-3">Platform</h5>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li>How it Works</li>
+                <li>Trust Scoring</li>
+                <li>Security</li>
+                <li>API</li>
+              </ul>
+            </div>
+            <div>
+              <h5 className="font-semibold mb-3">Community</h5>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li>Discord</li>
+                <li>Twitter</li>
+                <li>GitHub</li>
+                <li>Blog</li>
+              </ul>
+            </div>
+            <div>
+              <h5 className="font-semibold mb-3">Support</h5>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li>Help Center</li>
+                <li>Contact</li>
+                <li>Status</li>
+                <li>Terms</li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
+            © 2024 FundChain. All rights reserved.
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

@@ -35,12 +35,10 @@ interface StartupListing {
 export const useStartupListings = () => {
   const [startups, setStartups] = useState<StartupListing[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchVerifiedStartups = async () => {
     setLoading(true);
-    setError(null);
     try {
       const { data, error } = await supabase
         .from('startup_listings')
@@ -65,11 +63,9 @@ export const useStartupListings = () => {
       setStartups(data || []);
     } catch (error) {
       console.error('Error fetching startups:', error);
-      const errorMessage = error.message || "Failed to fetch startup listings.";
-      setError(errorMessage);
       toast({
         title: "Error",
-        description: errorMessage,
+        description: "Failed to fetch startup listings.",
         variant: "destructive"
       });
     } finally {
@@ -260,7 +256,6 @@ export const useStartupListings = () => {
   return {
     startups,
     loading,
-    error,
     fetchVerifiedStartups,
     submitStartupListing
   };
