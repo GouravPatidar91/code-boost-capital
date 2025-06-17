@@ -26,14 +26,17 @@ const Dashboard = () => {
         <Tabs defaultValue="funding" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="funding">My Startups</TabsTrigger>
-            <TabsTrigger value="chat">Chat Inbox</TabsTrigger>
+            <TabsTrigger value="chat">Funder Messages</TabsTrigger>
             <TabsTrigger value="integrations">Integrations</TabsTrigger>
             <TabsTrigger value="repositories">Repositories</TabsTrigger>
           </TabsList>
           
           <TabsContent value="funding" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-semibold">My Listed Startups</h2>
+              <div>
+                <h2 className="text-2xl font-semibold">My Listed Startups</h2>
+                <p className="text-gray-600 mt-1">Manage your startups and chat with potential funders</p>
+              </div>
               <Button className="bg-gradient-to-r from-purple-600 to-blue-600">
                 <Github className="w-4 h-4 mr-2" />
                 List New Startup
@@ -63,6 +66,7 @@ const Dashboard = () => {
                     startup={startup}
                     showAIAnalysis={aiAnalysisStartupId === startup.id}
                     onToggleAIAnalysis={() => toggleAIAnalysis(startup.id)}
+                    isFounderView={true}
                   />
                 ))}
               </div>
@@ -71,8 +75,10 @@ const Dashboard = () => {
 
           <TabsContent value="chat" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-semibold">Chat Inbox</h2>
-              <p className="text-gray-600">Messages from potential funders</p>
+              <div>
+                <h2 className="text-2xl font-semibold">Funder Messages</h2>
+                <p className="text-gray-600">Messages from potential funders interested in your startups</p>
+              </div>
             </div>
 
             {loading ? (

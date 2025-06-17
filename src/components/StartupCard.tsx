@@ -32,9 +32,15 @@ interface StartupCardProps {
   };
   showAIAnalysis?: boolean;
   onToggleAIAnalysis?: () => void;
+  isFounderView?: boolean;
 }
 
-export const StartupCard = ({ startup, showAIAnalysis = false, onToggleAIAnalysis }: StartupCardProps) => {
+export const StartupCard = ({ 
+  startup, 
+  showAIAnalysis = false, 
+  onToggleAIAnalysis,
+  isFounderView = false 
+}: StartupCardProps) => {
   const { fundingData, loading: fundingLoading } = useFundingData(startup.id);
   const { messages } = useRealTimeChat(startup.id);
   const { account } = useCDPWallet();
@@ -74,7 +80,7 @@ export const StartupCard = ({ startup, showAIAnalysis = false, onToggleAIAnalysi
               >
                 {startup.verified ? "Verified" : "Pending"}
               </Badge>
-              {isFounder && (
+              {(isFounder || isFounderView) && (
                 <Badge variant="outline" className="bg-purple-50 text-purple-700">
                   Your Startup
                 </Badge>
@@ -148,7 +154,7 @@ export const StartupCard = ({ startup, showAIAnalysis = false, onToggleAIAnalysi
               onClick={() => navigate(`/chat/${startup.id}`)}
             >
               <MessageSquare className="w-4 h-4 mr-1" />
-              {isFounder ? 'Chat Inbox' : 'Chat with Founder'}
+              {(isFounder || isFounderView) ? 'Reply to Funders' : 'Chat with Founder'}
               {unreadMessages > 0 && (
                 <span className="ml-1 bg-red-500 text-white text-xs rounded-full px-1">
                   {unreadMessages}
@@ -157,7 +163,7 @@ export const StartupCard = ({ startup, showAIAnalysis = false, onToggleAIAnalysi
             </Button>
             
             {/* Show AI Analysis button for non-founders (funders) */}
-            {!isFounder && startup.github_repositories?.html_url && (
+            {!(isFounder || isFounderView) && startup.github_repositories?.html_url && (
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -169,7 +175,7 @@ export const StartupCard = ({ startup, showAIAnalysis = false, onToggleAIAnalysi
               </Button>
             )}
             
-            {isFounder && (
+            {(isFounder || isFounderView) && (
               <Button variant="outline" size="sm" className="flex-1">
                 <TrendingUp className="w-4 h-4 mr-1" />
                 Analytics
@@ -197,7 +203,7 @@ export const StartupCard = ({ startup, showAIAnalysis = false, onToggleAIAnalysi
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                   <span>
                     {unreadMessages} new message{unreadMessages > 1 ? 's' : ''} 
-                    {isFounder ? ' from funders' : ' from founder'}
+                    {(isFounder || isFounderView) ? ' from funders' : ' from founder'}
                   </span>
                   <span className="text-gray-400">Now</span>
                 </div>
@@ -215,7 +221,7 @@ export const StartupCard = ({ startup, showAIAnalysis = false, onToggleAIAnalysi
       </Card>
 
       {/* AI Analysis Card - Only show for non-founders when requested */}
-      {showAIAnalysis && !isFounder && startup.github_repositories?.html_url && (
+      {showAIAnalysis && !(isFounder || isFounderView) && startup.github_repositories?.html_url && (
         <AIAnalysisCard
           startupId={startup.id}
           githubRepoUrl={startup.github_repositories.html_url}

@@ -75,13 +75,13 @@ const Chat = () => {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="flex items-center space-x-4 mb-8">
           <Button variant="outline" size="sm" asChild>
-            <Link to="/explore">
+            <Link to={isFounder ? "/dashboard" : "/explore"}>
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Explore
+              {isFounder ? 'Back to Dashboard' : 'Back to Explore'}
             </Link>
           </Button>
           <h1 className="text-3xl font-bold">
-            {isFounder ? 'Founder Chat' : 'Chat with Founder'}
+            {isFounder ? 'Chat with Funders' : 'Chat with Founder'}
           </h1>
         </div>
 
@@ -98,7 +98,10 @@ const Chat = () => {
                 <div>
                   <CardTitle className="text-lg">{startup.startup_name}</CardTitle>
                   <CardDescription>
-                    {isFounder ? 'Your startup chat' : `Chat with ${startup.developers?.github_username}`}
+                    {isFounder 
+                      ? 'Chat with potential funders about your startup' 
+                      : `Chat with ${startup.developers?.github_username} about their startup`
+                    }
                   </CardDescription>
                 </div>
               </div>
@@ -120,7 +123,12 @@ const Chat = () => {
               {messages.length === 0 ? (
                 <div className="text-center text-gray-500 mt-8">
                   <MessageSquare className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                  <p>No messages yet. Start the conversation!</p>
+                  <p>
+                    {isFounder 
+                      ? 'No messages yet. Funders will appear here when they contact you!' 
+                      : 'No messages yet. Start the conversation with the founder!'
+                    }
+                  </p>
                 </div>
               ) : (
                 messages.map(msg => (
