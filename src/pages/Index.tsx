@@ -15,7 +15,7 @@ const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [showListingForm, setShowListingForm] = useState(false);
-  const { startupListings, loading, error } = useStartupListings();
+  const { startups, loading } = useStartupListings();
 
   useEffect(() => {
     // Set up auth state listener
@@ -123,7 +123,22 @@ const Index = () => {
 
             {showListingForm && (
               <div className="mb-8">
-                <StartupListingForm onClose={() => setShowListingForm(false)} />
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Submit Your Startup</CardTitle>
+                    <CardDescription>Create a listing for your startup project</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <StartupListingForm />
+                    <Button 
+                      onClick={() => setShowListingForm(false)}
+                      variant="outline"
+                      className="mt-4"
+                    >
+                      Cancel
+                    </Button>
+                  </CardContent>
+                </Card>
               </div>
             )}
           </div>
@@ -139,20 +154,14 @@ const Index = () => {
             </div>
           )}
 
-          {error && (
-            <div className="text-center py-8">
-              <p className="text-red-500">Error loading startups: {error}</p>
-            </div>
-          )}
-
-          {!loading && !error && startupListings.length === 0 && (
+          {!loading && (!startups || startups.length === 0) && (
             <div className="text-center py-8">
               <p className="text-gray-500">No startup listings available yet.</p>
             </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {startupListings.map((startup) => (
+            {startups && startups.map((startup) => (
               <Card key={startup.id} className="h-full">
                 <CardHeader>
                   <div className="flex justify-between items-start">
