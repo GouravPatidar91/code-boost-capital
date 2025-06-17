@@ -7,9 +7,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Github, Wallet, Shield, TrendingUp, Users, MessageSquare, Star, GitCommit, DollarSign, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { StartupListingForm } from '@/components/StartupListingForm';
 
 const Index = () => {
   const [userRole, setUserRole] = useState<'founder' | 'funder'>('funder');
+  const [showListingForm, setShowListingForm] = useState(false);
 
   const mockStartups = [
     {
@@ -61,6 +63,16 @@ const Index = () => {
       lastActivity: "4 hours ago"
     }
   ];
+
+  if (showListingForm) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
+        <div className="container mx-auto px-4 py-8">
+          <StartupListingForm onBack={() => setShowListingForm(false)} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
@@ -143,7 +155,11 @@ const Index = () => {
             </div>
 
             {userRole === 'founder' ? (
-              <Button size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 text-lg px-8 py-3">
+              <Button 
+                size="lg" 
+                className="bg-gradient-to-r from-purple-600 to-blue-600 text-lg px-8 py-3"
+                onClick={() => setShowListingForm(true)}
+              >
                 <Github className="w-5 h-5 mr-2" />
                 List Your Startup
               </Button>
