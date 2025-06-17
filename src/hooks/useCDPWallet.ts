@@ -1,11 +1,11 @@
 
 import { useState, useEffect } from 'react';
-import { CoinbaseWallet } from '@coinbase/wallet-sdk';
+import { CoinbaseWalletSDK } from '@coinbase/wallet-sdk';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useCDPWallet = () => {
-  const [wallet, setWallet] = useState<CoinbaseWallet | null>(null);
+  const [wallet, setWallet] = useState<CoinbaseWalletSDK | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [account, setAccount] = useState<string | null>(null);
   const [balance, setBalance] = useState<string>('0');
@@ -13,7 +13,7 @@ export const useCDPWallet = () => {
 
   useEffect(() => {
     // Initialize Coinbase Wallet SDK
-    const coinbaseWallet = new CoinbaseWallet({
+    const coinbaseWallet = new CoinbaseWalletSDK({
       appName: 'FundChain',
       appLogoUrl: 'https://your-app-logo.com/logo.png',
       darkMode: false
@@ -24,7 +24,8 @@ export const useCDPWallet = () => {
     // Check if already connected
     const checkConnection = async () => {
       try {
-        const accounts = await coinbaseWallet.getProvider().request({
+        const provider = coinbaseWallet.makeWeb3Provider();
+        const accounts = await provider.request({
           method: 'eth_accounts'
         });
         
@@ -52,7 +53,8 @@ export const useCDPWallet = () => {
     }
 
     try {
-      const accounts = await wallet.getProvider().request({
+      const provider = wallet.makeWeb3Provider();
+      const accounts = await provider.request({
         method: 'eth_requestAccounts'
       });
 
@@ -95,7 +97,7 @@ export const useCDPWallet = () => {
     if (!wallet) return;
 
     try {
-      const provider = wallet.getProvider();
+      const provider = wallet.makeWeb3Provider();
       const balance = await provider.request({
         method: 'eth_getBalance',
         params: [address, 'latest']
@@ -143,7 +145,7 @@ export const useCDPWallet = () => {
     }
 
     try {
-      const provider = wallet.getProvider();
+      const provider = wallet.makeWeb3Provider();
       
       // Convert amount to wei
       const amountInWei = '0x' + (parseFloat(amount) * Math.pow(10, 18)).toString(16);
