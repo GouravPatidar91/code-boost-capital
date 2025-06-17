@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,12 +11,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Github, Shield, Star, DollarSign, Wallet } from 'lucide-react';
 import { useStartupListings } from '@/hooks/useStartupListings';
 import { useCDPWallet } from '@/hooks/useCDPWallet';
+import { useFundingData } from '@/hooks/useFundingData';
 import { useToast } from '@/hooks/use-toast';
 
 const Fund = () => {
   const { id } = useParams();
   const { startups, loading } = useStartupListings();
   const { isConnected, account, balance, connectWallet, sendTransaction } = useCDPWallet();
+  const { fundingData, loading: fundingLoading, recordFundingTransaction } = useFundingData(id);
   const { toast } = useToast();
   const [fundingAmount, setFundingAmount] = useState('');
   const [message, setMessage] = useState('');
@@ -44,7 +45,7 @@ const Fund = () => {
       return;
     }
 
-    if (parseFloat(fundingAmount) > parseFloat(balance)) {
+    if (parseFloat(fundingAmount) > parseFloat(balance) * 3000) { // Convert ETH to USD
       toast({
         title: "Insufficient balance",
         description: "You don't have enough ETH to complete this transaction.",
@@ -65,7 +66,17 @@ const Fund = () => {
 
       const transactionHash = await sendTransaction(recipientAddress, ethAmount);
 
-      if (transactionHash) {
+      if (transactionHash && startup && account) {
+        // Record the funding transaction in the database
+        await recordFundingTransaction(
+          startup.id,
+          account,
+          parseFloat(fundingAmount),
+          parseFloat(ethAmount),
+          'ETH',
+          transactionHash
+        );
+
         toast({
           title: "Funding Successful!",
           description: `Successfully sent $${fundingAmount} to ${startup?.startup_name}`,
@@ -87,7 +98,7 @@ const Fund = () => {
     }
   };
 
-  if (loading) {
+  if (loading || fundingLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-lg text-gray-600">Loading startup details...</div>
@@ -107,6 +118,12 @@ const Fund = () => {
       </div>
     );
   }
+
+  // Use real funding data or fallback to default values
+  const totalRaised = fundingData?.total_raised || 0;
+  const fundingGoal = fundingData?.funding_goal || startup.funding_goal || 250000;
+  const fundingPercentage = fundingData?.funding_percentage || 0;
+  const totalFunders = fundingData?.total_funders || 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
@@ -163,13 +180,16 @@ const Fund = () => {
                 <div className="flex justify-between text-base">
                   <span className="text-gray-600">Funding Goal</span>
                   <span className="font-semibold text-lg">
-                    ${startup.funding_goal?.toLocaleString() || 'N/A'}
+                    ${fundingGoal?.toLocaleString()}
                   </span>
                 </div>
-                <Progress value={15} className="h-3" />
+                <Progress value={fundingPercentage} className="h-3" />
                 <div className="flex justify-between text-sm text-gray-500">
-                  <span>$37,500 raised</span>
-                  <span>15% of goal</span>
+                  <span>${totalRaised?.toLocaleString()} raised</span>
+                  <span>{fundingPercentage.toFixed(1)}% of goal</span>
+                </div>
+                <div className="text-sm text-gray-600">
+                  <span className="font-medium">{totalFunders}</span> {totalFunders === 1 ? 'funder' : 'funders'}
                 </div>
               </div>
 

@@ -41,6 +41,48 @@ export type Database = {
           },
         ]
       }
+      chat_messages: {
+        Row: {
+          created_at: string
+          id: string
+          message_content: string
+          sender_type: string
+          sender_wallet_address: string | null
+          startup_listing_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_content: string
+          sender_type: string
+          sender_wallet_address?: string | null
+          startup_listing_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_content?: string
+          sender_type?: string
+          sender_wallet_address?: string | null
+          startup_listing_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_startup_listing_id_fkey"
+            columns: ["startup_listing_id"]
+            isOneToOne: false
+            referencedRelation: "startup_funding_summary"
+            referencedColumns: ["startup_id"]
+          },
+          {
+            foreignKeyName: "chat_messages_startup_listing_id_fkey"
+            columns: ["startup_listing_id"]
+            isOneToOne: false
+            referencedRelation: "startup_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contributions: {
         Row: {
           contribution_type: string
@@ -178,6 +220,13 @@ export type Database = {
             foreignKeyName: "funding_interests_startup_listing_id_fkey"
             columns: ["startup_listing_id"]
             isOneToOne: false
+            referencedRelation: "startup_funding_summary"
+            referencedColumns: ["startup_id"]
+          },
+          {
+            foreignKeyName: "funding_interests_startup_listing_id_fkey"
+            columns: ["startup_listing_id"]
+            isOneToOne: false
             referencedRelation: "startup_listings"
             referencedColumns: ["id"]
           },
@@ -195,6 +244,7 @@ export type Database = {
           id: string
           milestone_id: string | null
           recipient_wallet_address: string
+          startup_listing_id: string | null
           status: string | null
           transaction_hash: string | null
         }
@@ -209,6 +259,7 @@ export type Database = {
           id?: string
           milestone_id?: string | null
           recipient_wallet_address: string
+          startup_listing_id?: string | null
           status?: string | null
           transaction_hash?: string | null
         }
@@ -223,6 +274,7 @@ export type Database = {
           id?: string
           milestone_id?: string | null
           recipient_wallet_address?: string
+          startup_listing_id?: string | null
           status?: string | null
           transaction_hash?: string | null
         }
@@ -232,6 +284,20 @@ export type Database = {
             columns: ["grant_id"]
             isOneToOne: false
             referencedRelation: "grants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "funding_transactions_startup_listing_id_fkey"
+            columns: ["startup_listing_id"]
+            isOneToOne: false
+            referencedRelation: "startup_funding_summary"
+            referencedColumns: ["startup_id"]
+          },
+          {
+            foreignKeyName: "funding_transactions_startup_listing_id_fkey"
+            columns: ["startup_listing_id"]
+            isOneToOne: false
+            referencedRelation: "startup_listings"
             referencedColumns: ["id"]
           },
         ]
@@ -531,7 +597,17 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      startup_funding_summary: {
+        Row: {
+          funding_goal: number | null
+          funding_percentage: number | null
+          startup_id: string | null
+          startup_name: string | null
+          total_funders: number | null
+          total_raised: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
